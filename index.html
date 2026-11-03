@@ -1,26 +1,54 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <title>Example</title>
-  <!-- Initialize a global WBK function -->
-  <script src="https://cdn.rawgit.com/maxlath/wikidata-sdk/dist/dist/wikibase-sdk.min.js"></script>
-  <!-- Initialize a global wdk object using the WBK object -->
-  <script src="https://cdn.rawgit.com/maxlath/wikidata-sdk/dist/dist/wikidata-sdk.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Wikidata Visualization</title>
 </head>
 
 <body>
-  <pre id="output"></pre>
+  <h1>My First Wikidata Query</h1>
+  <p>Showing 10 chemical compounds and their CAS numbers:</p>
+
+  <pre id="output">Loading data...</pre>
+
   <script>
-    query = "SELECT ?compound ?cas WHERE { ?compound wdt:P231 ?cas } LIMIT 10"
-    const url = wdk.sparqlQuery(query)
-    async function main () {
-      const response = await fetch(url)
-      const results = await response.json()
-      const simpleResults = wdk.simplify.sparqlResults(results)
-      document.getElementById('output').innerHTML =
-        JSON.stringify(simpleResults, undefined, 2);
+    const query = `
+      SELECT ?compound ?cas WHERE {
+        ?compound wdt:P231 ?cas .
+      }
+      LIMIT 10
+    `;
+
+    const endpoint = "https://query.wikidata.org/sparql";
+    const url = endpoint + "?query=" +
+      encodeURIComponent(query) + "&format=json";
+
+    async function main() {
+      try {
+        const response = await fetch(url);
+
+        if (!response.ok) {
+          throw new Error("HTTP error: " + response.status);
+        }
+
+        const results = await response.json();
+
+        const simpleResults = results.results.bindings.map(row => ({
+          compound: row.compound.value,
+          cas: row.cas.value
+        }));
+
+        document.getElementById("output").textContent =
+          JSON.stringify(simpleResults, null, 2);
+
+      } catch (error) {
+        document.getElementById("output").textContent =
+          "Error: " + error.message;
+      }
     }
-    main()
+
+    main();
   </script>
 </body>
 </html>
