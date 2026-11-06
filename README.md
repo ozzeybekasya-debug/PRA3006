@@ -6,7 +6,7 @@ To what extent is gene overlap between human metabolic pathways (from Wikipathwa
 ## Data Sources
 - Wikidata
 - WikiPathways
-- ExPASt ENZYME
+- ExPASy ENZYME
 
 ## Data Collection
 SPARQL queries are stored in the queries folder. These queries can be used to retrieve data from Wikidata Query Service.
