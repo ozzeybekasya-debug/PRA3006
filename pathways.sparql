@@ -1,0 +1,7 @@
+#All human pathways from Wikipathways
+#title: All human pathways from Wikipathways
+SELECT ?pathway ?pathwayLabel ?wpid WHERE {
+   ?pathway wdt:P2410 ?wpid ;
+            wdt:P703 wd:Q15978631 .
+  SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],mul,en". }
+}
