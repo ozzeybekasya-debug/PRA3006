@@ -16,3 +16,6 @@ SPARQL queries are stored in the queries folder. These queries can be used to re
 2. pathway_genes.sparql - retrieving pathway associated genes
 
 3. enzyme_ec.sparql - retrieving EC numbers
+
+## Data Filtering
+The data obtained from pathways.sparql is filterred using JavaScript.
