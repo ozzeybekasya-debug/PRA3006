@@ -18,4 +18,4 @@ SPARQL queries are stored in the queries folder. These queries can be used to re
 3. enzyme_ec.sparql - retrieving EC numbers
 
 ## Data Filtering
-The data obtained from pathways.sparql is filterred using JavaScript.
+The data obtained from pathways.sparql is filtered using JavaScript. First the code will be written as Python and then translated to JavaScript due to the researcher's familiarity with the programming language Python. 
