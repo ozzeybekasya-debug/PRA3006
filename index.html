@@ -1,54 +1,18 @@
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>Wikidata Visualization</title>
+  <title>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</title>
 </head>
 
 <body>
-  <h1>My First Wikidata Query</h1>
-  <p>Showing 10 chemical compounds and their CAS numbers:</p>
+  <h1>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</h1>
 
-  <pre id="output">Loading data...</pre>
+  <h2>Research Question</h2>
 
-  <script>
-    const query = `
-      SELECT ?compound ?cas WHERE {
-        ?compound wdt:P231 ?cas .
-      }
-      LIMIT 10
-    `;
-
-    const endpoint = "https://query.wikidata.org/sparql";
-    const url = endpoint + "?query=" +
-      encodeURIComponent(query) + "&format=json";
-
-    async function main() {
-      try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-          throw new Error("HTTP error: " + response.status);
-        }
-
-        const results = await response.json();
-
-        const simpleResults = results.results.bindings.map(row => ({
-          compound: row.compound.value,
-          cas: row.cas.value
-        }));
-
-        document.getElementById("output").textContent =
-          JSON.stringify(simpleResults, null, 2);
-
-      } catch (error) {
-        document.getElementById("output").textContent =
-          "Error: " + error.message;
-      }
-    }
-
-    main();
-  </script>
+  <p>To what extent is gene overlap between human metabolic pathways (from WikiPathways) associated with functional similarity among their enzymes encoded by non-shared genes, based on EC classification?</p>
 </body>
+
 </html>
