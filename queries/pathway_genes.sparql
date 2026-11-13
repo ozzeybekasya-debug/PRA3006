@@ -1,0 +1,19 @@
+SELECT DISTINCT ?wpid ?pathwayLabel ?gene ?geneLabel
+WHERE {
+  # Test on two pathways first
+  VALUES ?wpid { "WP534" "WP134" }
+
+  # Find the human pathway and its recorded members
+  ?pathway wdt:P2410 ?wpid ;
+           wdt:P703 wd:Q15978631 ;
+           wdt:P527 ?gene .
+
+  # Keep members that Wikidata explicitly classifies as genes
+  ?gene wdt:P31 wd:Q7187 .
+
+  # Show readable names
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en" .
+  }
+}
+ORDER BY ?wpid ?geneLabel
