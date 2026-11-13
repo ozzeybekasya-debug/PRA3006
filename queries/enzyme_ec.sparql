@@ -1,0 +1,41 @@
+#title: Protein-coding status and EC annotations for selected pathway genes
+
+SELECT DISTINCT
+  ?gene ?geneLabel ?isAnnotatedProteinCoding
+  ?product ?productLabel ?uniprotId ?ecNumber
+WHERE {
+  # Get each distinct gene from the same pathways as pathway_genes.sparql
+  {
+    SELECT DISTINCT ?gene
+    WHERE {
+      VALUES ?wpid { "WP534" "WP134" "WP690" "WP78" }
+
+      ?pathway wdt:P2410 ?wpid ;
+               wdt:P703 wd:Q15978631 ;
+               wdt:P527 ?gene .
+
+      ?gene wdt:P31 wd:Q7187 .
+    }
+  }
+
+  # Check for a protein-coding annotation independently of EC numbers
+  BIND(EXISTS {
+    ?gene (wdt:P31|wdt:P279) wd:Q20747295 .
+  } AS ?isAnnotatedProteinCoding)
+
+  # Keep genes even if no product or EC number is found
+  OPTIONAL {
+    ?gene wdt:P688 ?product .
+
+    OPTIONAL { ?product wdt:P352 ?uniprotId . }
+
+    OPTIONAL {
+      ?product (wdt:P591|wdt:P660/wdt:P591) ?ecNumber .
+    }
+  }
+
+  SERVICE wikibase:label {
+    bd:serviceParam wikibase:language "en" .
+  }
+}
+ORDER BY ?geneLabel ?product ?ecNumber
