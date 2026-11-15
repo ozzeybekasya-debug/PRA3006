@@ -1,66 +1,204 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</title>
-
-  <style>
-    body {
-      max-width: 820px;
-      margin: 60px auto;
-      padding: 0 24px;
-      font-family: Arial, sans-serif;
-      color: #263238;
-    }
-
-    h1 {
-      font-family: Georgia, serif;
-      font-size: clamp(2rem, 5vw, 3rem);
-      line-height: 1.15;
-      color: #163b3d;
-      margin: 0 0 32px;
-    }
-
-    h2 {
-      font-size: 1.25rem;
-      margin: 0 0 8px;
-    }
-
-    p {
-      font-size: 1.125rem;
-      line-height: 1.6;
-      margin: 0;
-    }
-  </style>
-</head>
-<body>
-  <h1>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</h1>
-
-  <h2>Research Question</h2>
-  <p>To what extent is gene overlap between human metabolic pathways
-    (from WikiPathways) associated with functional similarity among their
-    enzymes encoded by non-shared genes, based on Enzyme Commission (EC)
-    classification?</p>
-
-  <section id="trial-results" aria-labelledby="trial-heading" style="margin-top: 32px;">
-    <h2 id="trial-heading">Pilot pathway comparison</h2>
-    <p id="trial-status" role="status">Loading data from Wikidata…</p>
-    <div id="trial-chart"></div>
-    <div id="trial-table" style="overflow-x: auto;"></div>
-  </section>
-
 <script id="pathway_genes.sparql" type="application/sparql-query">
-PASTE THE CONTENTS OF pathway_genes.sparql HERE
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+SELECT DISTINCT ?wpid ?gene WHERE {
+  VALUES ?wpid { "WP534" "WP134" "WP690" "WP78" }
+  ?pathway wdt:P2410 ?wpid ;
+           wdt:P703 wd:Q15978631 ;
+           wdt:P527 ?gene .
+  ?gene wdt:P31 wd:Q7187 .
+}
 </script>
 
 <script id="enzyme_ec.sparql" type="application/sparql-query">
-PASTE THE CONTENTS OF enzyme_ec.sparql HERE
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+SELECT DISTINCT ?gene ?ecNumber WHERE {
+  {
+    SELECT DISTINCT ?gene WHERE {
+      VALUES ?wpid { "WP534" "WP134" "WP690" "WP78" }
+      ?pathway wdt:P2410 ?wpid ;
+               wdt:P703 wd:Q15978631 ;
+               wdt:P527 ?gene .
+      ?gene wdt:P31 wd:Q7187 .
+    }
+  }
+  ?gene wdt:P688 ?product .
+  ?product (wdt:P591|wdt:P660/wdt:P591) ?ecNumber .
+}
 </script>
 
 <script type="module">
-PASTE THE CONTENTS OF analyze.js HERE
+const pathwayIds = ["WP534", "WP134", "WP690", "WP78"];
+const status = document.getElementById("trial-status");
+const chart = document.getElementById("trial-chart");
+const tableContainer = document.getElementById("trial-table");
+
+async function runQuery(id) {
+  const query = document.getElementById(id).textContent.trim();
+  const url = new URL("https://query.wikidata.org/sparql");
+  url.searchParams.set("query", query);
+  url.searchParams.set("format", "json");
+
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(60000)
+  });
+  if (!response.ok) throw new Error(`${id}: HTTP ${response.status}`);
+  return (await response.json()).results.bindings;
+}
+
+const difference = (a, b) => [...a].filter(item => !b.has(item));
+
+function jaccard(a, b) {
+  const union = new Set([...a, ...b]);
+  if (!union.size) return null;
+  return [...a].filter(item => b.has(item)).length / union.size;
+}
+
+function ecProfile(genes, ecByGene) {
+  const subclasses = new Set();
+  let annotated = 0;
+  for (const gene of genes) {
+    const codes = ecByGene.get(gene);
+    if (!codes?.size) continue;
+    annotated++;
+    for (const code of codes) subclasses.add(code);
+  }
+  return { subclasses, annotated };
+}
+
+function percent(value) {
+  return value === null ? "Not assessable" : `${(100 * value).toFixed(1)}%`;
+}
+
+async function main() {
+  status.textContent = "Requesting gene and EC data from Wikidata…";
+  const [geneRows, ecRows] = await Promise.all([
+    runQuery("pathway_genes.sparql"),
+    runQuery("enzyme_ec.sparql")
+  ]);
+
+  const genesByPathway = new Map(pathwayIds.map(id => [id, new Set()]));
+  for (const row of geneRows) {
+    genesByPathway.get(row.wpid.value)?.add(row.gene.value);
+  }
+
+  const ecByGene = new Map();
+  for (const row of ecRows) {
+    const gene = row.gene.value;
+    const ec = row.ecNumber.value.trim();
+    if (!/^\d+(?:\.\d+){3}$/.test(ec)) continue;
+    if (!ecByGene.has(gene)) ecByGene.set(gene, new Set());
+    ecByGene.get(gene).add(ec.split(".").slice(0, 2).join("."));
+  }
+
+  const pairs = [];
+  for (let i = 0; i < pathwayIds.length; i++) {
+    for (let j = i + 1; j < pathwayIds.length; j++) {
+      const idA = pathwayIds[i];
+      const idB = pathwayIds[j];
+      const a = genesByPathway.get(idA);
+      const b = genesByPathway.get(idB);
+      const onlyA = difference(a, b);
+      const onlyB = difference(b, a);
+      const listsFound = a.size > 0 && b.size > 0;
+      const ecA = ecProfile(onlyA, ecByGene);
+      const ecB = ecProfile(onlyB, ecByGene);
+
+      pairs.push({
+        label: `${idA} vs ${idB}`,
+        counts: `${a.size} / ${b.size}`,
+        shared: listsFound ? a.size - onlyA.length : "Not assessable",
+        overlap: listsFound ? jaccard(a, b) : null,
+        coverage: listsFound
+          ? `${ecA.annotated}/${onlyA.length} | ${ecB.annotated}/${onlyB.length}`
+          : "Not assessable",
+        similarity: listsFound && ecA.subclasses.size && ecB.subclasses.size
+          ? jaccard(ecA.subclasses, ecB.subclasses)
+          : null
+      });
+    }
+  }
+
+  drawTable(pairs);
+  const points = pairs.filter(pair => pair.overlap !== null && pair.similarity !== null);
+  const summary = `${points.length} of ${pairs.length} pairs have both scores.`;
+  status.textContent = summary;
+  if (!points.length) return;
+
+  try {
+    const d3 = await import("https://cdn.jsdelivr.net/npm/d3@7/+esm");
+    drawChart(points, d3);
+  } catch (error) {
+    status.textContent = `${summary} The chart could not load, but the table is available.`;
+    console.error(error);
+  }
+}
+
+function drawTable(pairs) {
+  const table = document.createElement("table");
+  table.createCaption().textContent =
+    "EC coverage shows the number of non-shared genes with a usable EC annotation on each side.";
+
+  const heading = table.createTHead().insertRow();
+  for (const label of [
+    "Pair", "Genes A / B", "Shared genes",
+    "Gene overlap", "EC coverage A | B", "EC similarity"
+  ]) {
+    const cell = document.createElement("th");
+    cell.scope = "col";
+    cell.textContent = label;
+    heading.append(cell);
+  }
+
+  const body = table.createTBody();
+  for (const pair of pairs) {
+    const row = body.insertRow();
+    for (const value of [
+      pair.label, pair.counts, pair.shared, percent(pair.overlap),
+      pair.coverage, percent(pair.similarity)
+    ]) {
+      row.insertCell().textContent = value;
+    }
+  }
+  tableContainer.replaceChildren(table);
+}
+
+function drawChart(points, d3) {
+  const x = d3.scaleLinear().domain([0, 1]).range([65, 585]);
+  const y = d3.scaleLinear().domain([0, 1]).range([305, 25]);
+  const svg = d3.select(chart).append("svg")
+    .attr("viewBox", "0 0 610 355")
+    .style("width", "100%")
+    .attr("role", "img")
+    .attr("aria-label", "Gene overlap versus EC subclass similarity");
+
+  svg.append("g").attr("transform", "translate(0,305)")
+    .call(d3.axisBottom(x).ticks(5).tickFormat(d3.format(".0%")));
+  svg.append("g").attr("transform", "translate(65,0)")
+    .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".0%")));
+
+  svg.append("text").attr("x", 325).attr("y", 345)
+    .attr("text-anchor", "middle").text("Gene overlap (Jaccard)");
+  svg.append("text").attr("transform", "translate(17,165) rotate(-90)")
+    .attr("text-anchor", "middle").text("EC subclass similarity (Jaccard)");
+
+  svg.selectAll("circle").data(points).join("circle")
+    .attr("cx", pair => x(pair.overlap))
+    .attr("cy", pair => y(pair.similarity))
+    .attr("r", 6)
+    .attr("fill", "#167768")
+    .append("title")
+    .text(pair => `${pair.label}: ${percent(pair.overlap)} gene overlap, ${percent(pair.similarity)} EC similarity`);
+}
+
+main().catch(error => {
+  status.textContent = `Could not load the Wikidata results. ${error.message}`;
+  console.error(error);
+});
 </script>
-  
+
 </body>
 </html>
