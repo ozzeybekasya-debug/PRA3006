@@ -4,11 +4,19 @@ const endpoint = "https://query.wikidata.org/sparql";
 const pathwayIds = ["WP534", "WP134", "WP690", "WP78"];
 const status = document.querySelector("#trial-status");
 
+<<<<<<< HEAD
 // Load a saved SPARQL query and send it to Wikidata.
 async function runQuery(filename) {
   const queryPath = new URL(`./queries/${filename}`, import.meta.url);
   const queryFile = await fetch(queryPath);
 
+=======
+// 1. Load a saved SPARQL query and send it to Wikidata.
+async function runQuery(filename) {
+  const queryPath = new URL(`./queries/${filename}`, import.meta.url);
+
+  const queryFile = await fetch(queryPath);
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
   if (!queryFile.ok) {
     throw new Error(`Could not load queries/${filename} (HTTP ${queryFile.status}).`);
   }
@@ -49,7 +57,7 @@ function difference(a, b) {
 
 function jaccard(a, b) {
   const unionSize = new Set([...a, ...b]).size;
-  return unionSize ? intersection(a, b).size / unionSize : null;
+  return unionSize > 0 ? intersection(a, b).size / unionSize : null;
 }
 
 function ecProfile(genes, ecByGene) {
@@ -67,6 +75,10 @@ function ecProfile(genes, ecByGene) {
   return { subclasses, annotatedGenes };
 }
 
+<<<<<<< HEAD
+=======
+// 3. Load D3 and the data, then build the six pairwise comparisons.
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
 async function main() {
   status.textContent = "Loading D3…";
 
@@ -83,17 +95,32 @@ async function main() {
     runQuery("enzyme_ec.sparql")
   ]);
 
+<<<<<<< HEAD
   // Keep all four pathways, even if a pathway returns no gene rows.
   const genesByPathway = new Map(pathwayIds.map(id => [id, new Set()]));
+=======
+  // Keep an entry for each pathway, even if no genes were retrieved.
+  const genesByPathway = new Map(
+    pathwayIds.map(id => [id, new Set()])
+  );
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
 
   for (const row of geneRows) {
     const genes = genesByPathway.get(row.wpid?.value);
-    if (genes && row.gene?.value) genes.add(row.gene.value);
+    if (genes && row.gene?.value) {
+      genes.add(row.gene.value);
+    }
   }
 
+<<<<<<< HEAD
   // Join annotations to pathway members by gene URI.
   // For this pilot, keep complete numeric EC numbers only.
   // EC 5.3.1.1 contributes the subclass 5.3.
+=======
+  // Match the two query results by gene URI.
+  // For this pilot, use complete numeric EC numbers only.
+  // Example: EC 5.3.1.1 contributes the subclass 5.3.
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
   const ecByGene = new Map();
 
   for (const row of ecRows) {
@@ -102,7 +129,10 @@ async function main() {
 
     if (!gene || !ec || !/^\d+(?:\.\d+){3}$/.test(ec)) continue;
 
-    if (!ecByGene.has(gene)) ecByGene.set(gene, new Set());
+    if (!ecByGene.has(gene)) {
+      ecByGene.set(gene, new Set());
+    }
+
     ecByGene.get(gene).add(ec.split(".").slice(0, 2).join("."));
   }
 
@@ -120,6 +150,9 @@ async function main() {
       const onlyB = difference(b, a);
       const ecA = ecProfile(onlyA, ecByGene);
       const ecB = ecProfile(onlyB, ecByGene);
+      const hasEcProfiles =
+        hasGeneLists && ecA.subclasses.size > 0 && ecB.subclasses.size > 0;
+
       const hasEcProfiles =
         hasGeneLists && ecA.subclasses.size > 0 && ecB.subclasses.size > 0;
 
@@ -147,11 +180,17 @@ async function main() {
 
   status.textContent = `${plotted} of ${pairs.length} pairs have both scores. `
     + "All pairs are listed in the table.";
+<<<<<<< HEAD
 
   addDownloadButton();
 }
 
 // Plot only pathway pairs that have both similarity scores.
+=======
+}
+
+// 4. Plot only pairs that have both a gene score and an EC score.
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
 function drawChart(pairs) {
   const points = pairs.filter(
     pair => pair.overlap !== null && pair.similarity !== null
@@ -159,9 +198,15 @@ function drawChart(pairs) {
 
   const chart = d3.select("#trial-chart");
 
+<<<<<<< HEAD
   if (!points.length) {
     chart.append("p").text(
       "No pairs can be plotted yet. Check the gene counts and EC coverage in the table."
+=======
+  if (points.length === 0) {
+    chart.append("p").text(
+      "No pairs can be plotted yet. Check the EC coverage in the table below."
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
     );
     return;
   }
@@ -210,7 +255,11 @@ function drawChart(pairs) {
     );
 }
 
+<<<<<<< HEAD
 // List all six pairs, including those that cannot be plotted.
+=======
+// 5. Show all six pairs, including those that could not be plotted.
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
 function drawTable(pairs) {
   const percent = d3.format(".1%");
   const score = value => value === null ? "Not assessable" : percent(value);
@@ -222,8 +271,17 @@ function drawTable(pairs) {
   );
 
   const headings = [
+<<<<<<< HEAD
     "Pair", "Genes A / B", "Shared genes",
     "Gene overlap", "EC coverage A | B", "EC similarity"
+=======
+    "Pair",
+    "Genes A / B",
+    "Shared genes",
+    "Gene overlap",
+    "EC coverage A | B",
+    "EC similarity"
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
   ];
 
   table.append("thead").append("tr")
@@ -248,6 +306,7 @@ function drawTable(pairs) {
     ])
     .join("td")
     .text(value => value);
+<<<<<<< HEAD
 }
 
 // Save the rendered page, including the SVG chart and results table.
@@ -280,6 +339,8 @@ function addDownloadButton() {
   });
 
   document.querySelector("#trial-results").append(button);
+=======
+>>>>>>> 316fa13ed5eac3f0ff69eaeaa19b35c78d5e6558
 }
 
 main().catch(error => {
