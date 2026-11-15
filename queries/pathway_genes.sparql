@@ -1,7 +1,14 @@
 #title: Genes linked to four human metabolic pathways
+# The query asks Wikidata the following question: For each of these four human pathways, which members are recorded as genes?
+# SELECT lists the columns to show, in this order:
+# Wikipathways ID, pathway name, gene item, and gene name.,
+# DISTINCT removes duplicate rows when all four selected values match.
+
 SELECT DISTINCT ?wpid ?pathwayLabel ?gene ?geneLabel
+# WHERE describes the patterns that Wikidata must match.
+
 WHERE {
-  # Select the four pathways for the pilot
+  # VALUES restricts ?wpid to these four IDs.
   VALUES ?wpid {
     "WP534"  # Glycolysis and gluconeogenesis
     "WP134"  # Pentose phosphate metabolism
@@ -10,6 +17,8 @@ WHERE {
   }
 
   # Find the human pathways and their recorded members
+  # It has three parts: the subject (?pathway), the property (wdt:P527), and the object (?gene).
+  # ; means “keep the same subject for the next property. That is why we only wrote one ?pathway
   ?pathway wdt:P2410 ?wpid ;
            wdt:P703 wd:Q15978631 ;
            wdt:P527 ?gene .
@@ -17,8 +26,11 @@ WHERE {
   # Keep members that Wikidata explicitly classifies as genes
   ?gene wdt:P31 wd:Q7187 .
 
+  # Wikidata's label service fills in the readable names
+  # ?pathwayLabel for ?pathway and ?geneLabel for ?gene.
   SERVICE wikibase:label {
     bd:serviceParam wikibase:language "en" .
   }
 }
+# Sort by pathway ID first, then by gene name within each pathway.
 ORDER BY ?wpid ?geneLabel
