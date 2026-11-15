@@ -1,4 +1,4 @@
-# PRA3006 — Programming in Life Sciences
+# PRA3006: Programming in Life Sciences
 
 ## Functional Similarity and Gene Overlap Between Human Metabolic Pathways
 
