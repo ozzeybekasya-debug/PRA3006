@@ -34,20 +34,22 @@
     }
   </style>
 </head>
-
-<section id="trial-results" aria-labelledby="trial-heading">
-  <h2 id="trial-heading">Pilot pathway comparison</h2>
-  <p id="trial-status" role="status">Loading data from Wikidata…</p>
-  <div id="trial-chart"></div>
-  <div id="trial-table" style="overflow-x: auto;"></div>
-</section>
-
-<script type="module" src="./analyze.js"></script>
 <body>
   <h1>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</h1>
 
   <h2>Research Question</h2>
+  <p>To what extent is gene overlap between human metabolic pathways
+    (from WikiPathways) associated with functional similarity among their
+    enzymes encoded by non-shared genes, based on Enzyme Commission (EC)
+    classification?</p>
 
-  <p>To what extent is gene overlap between human metabolic pathways (from Wikipathways) associated with functional similarity among their enzymes encoded by nonshared genes, based on Enzyme Commission (EC) classification?</p>
+  <section id="trial-results" aria-labelledby="trial-heading" style="margin-top: 32px;">
+    <h2 id="trial-heading">Pilot pathway comparison</h2>
+    <p id="trial-status" role="status">Loading data from Wikidata…</p>
+    <div id="trial-chart"></div>
+    <div id="trial-table" style="overflow-x: auto;"></div>
+  </section>
+
+  <script type="module" src="./analyze.js"></script>
 </body>
 </html>
