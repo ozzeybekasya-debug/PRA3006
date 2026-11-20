@@ -1,7 +1,7 @@
 let d3;
 
 const endpoint = "https://query.wikidata.org/sparql";
-const pathwayIds = ["WP4792", "WP4022"];
+const pathwayIds = ["WP534", "WP134", "WP500", "WP78", "WP357", "WP143", "WP311", "WP197", "WP1495", "WP465", "WP497", "WP100"];
 const status = document.querySelector("#trial-status");
 
 // Load a saved SPARQL query and send it to Wikidata.

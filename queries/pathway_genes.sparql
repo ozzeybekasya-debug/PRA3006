@@ -10,9 +10,10 @@ SELECT DISTINCT ?wpid ?pathwayLabel ?gene ?geneLabel
 WHERE {
   # VALUES restricts ?wpid to these four IDs.
   VALUES ?wpid {
-    "WP4792"  
-    "WP4022"
-  }
+  "WP534"  "WP134"  "WP500"  "WP78"
+  "WP357"  "WP143"  "WP311"  "WP197"
+  "WP1495" "WP465" "WP497"  "WP100"
+}
 
   # Find the human pathways and their recorded members
   # It has three parts: the subject (?pathway), the property (wdt:P527), and the object (?gene).
