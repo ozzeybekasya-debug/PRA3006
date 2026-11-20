@@ -32,3 +32,10 @@ Protein-coding status and EC annotations are queried separately in Wikidata.
 ### License
 
 This project is licensed under the MIT License. See [LICENSE](LICENSE).
+
+### Plan for Practical 4:
+- Decide on the pathways to focus on.
+- Solve the problem about webpage visualizations.
+- Ask question about the examination - can we have annotated queries and codes.
+- Complete the main visualizations in the webpage.
+- Start annotating and understanding HTML and JavaScript lines.

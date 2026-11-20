@@ -330,7 +330,7 @@ function addDownloadButton() {
 
     const link = document.createElement("a");
     link.href = url;
-    link.download = "index.html";
+    link.download = "PRA3006-pilot-results.html";
     document.body.append(link);
     link.click();
     link.remove();
