@@ -1,8 +1,20 @@
 let d3;
 
 const endpoint = "https://query.wikidata.org/sparql";
-const pathwayIds = ["WP534", "WP134", "WP500", "WP78", "WP357", "WP143", "WP311", "WP197", "WP1495", "WP465", "WP497", "WP100"];
+const pathwayIds = [
+  "WP534", "WP134", "WP500", "WP78",
+  "WP357", "WP143", "WP311", "WP197",
+  "WP1495", "WP465", "WP497", "WP100"
+];
+const ecLevels = [
+  { depth: 1, name: "Class" },
+  { depth: 2, name: "Subclass" },
+  { depth: 3, name: "Sub-subclass" },
+  { depth: 4, name: "Full EC number" }
+];
 const status = document.querySelector("#trial-status");
+const heading = document.querySelector("#trial-heading");
+if (heading) heading.textContent = "Pathway comparison";
 
 // Load a saved SPARQL query and send it to Wikidata.
 async function runQuery(filename) {
@@ -38,7 +50,7 @@ async function runQuery(filename) {
   }
 }
 
-// Compare sets without double-counting genes or EC subclasses.
+// Compare sets without double-counting genes or EC entries.
 function intersection(a, b) {
   return new Set([...a].filter(value => b.has(value)));
 }
@@ -53,7 +65,7 @@ function jaccard(a, b) {
 }
 
 function ecProfile(genes, ecByGene) {
-  const subclasses = new Set();
+  const byLevel = ecLevels.map(() => new Set());
   let annotatedGenes = 0;
 
   for (const gene of genes) {
@@ -61,10 +73,16 @@ function ecProfile(genes, ecByGene) {
     if (!codes?.size) continue;
 
     annotatedGenes++;
-    for (const code of codes) subclasses.add(code);
+    for (const code of codes) {
+      const parts = code.split(".");
+      // Example: 3.5.4.6 contributes 3, 3.5, 3.5.4, and 3.5.4.6.
+      ecLevels.forEach(({ depth }, i) => {
+        byLevel[i].add(parts.slice(0, depth).join("."));
+      });
+    }
   }
 
-  return { subclasses, annotatedGenes };
+  return { byLevel, annotatedGenes };
 }
 
 async function main() {
@@ -83,7 +101,7 @@ async function main() {
     runQuery("enzyme_ec.sparql")
   ]);
 
-  // Keep both pathways, even if a pathway returns no gene rows.
+  // Keep all selected pathways, even if one returns no gene rows.
   const genesByPathway = new Map(pathwayIds.map(id => [id, new Set()]));
 
   for (const row of geneRows) {
@@ -94,8 +112,7 @@ async function main() {
   }
 
   // Join annotations to pathway members by gene URI.
-  // For this pilot, keep complete numeric EC numbers only.
-  // EC 5.3.1.1 contributes the subclass 5.3.
+  // Use the same complete EC annotations at all four levels.
   const ecByGene = new Map();
 
   for (const row of ecRows) {
@@ -108,7 +125,7 @@ async function main() {
       ecByGene.set(gene, new Set());
     }
 
-    ecByGene.get(gene).add(ec.split(".").slice(0, 2).join("."));
+    ecByGene.get(gene).add(ec);
   }
 
   const pairs = [];
@@ -126,7 +143,7 @@ async function main() {
       const ecA = ecProfile(onlyA, ecByGene);
       const ecB = ecProfile(onlyB, ecByGene);
       const hasEcProfiles =
-        hasGeneLists && ecA.subclasses.size > 0 && ecB.subclasses.size > 0;
+        hasGeneLists && ecA.annotatedGenes > 0 && ecB.annotatedGenes > 0;
 
       pairs.push({
         label: `${idA} vs ${idB}`,
@@ -136,30 +153,30 @@ async function main() {
         coverage: hasGeneLists
           ? `${ecA.annotatedGenes}/${onlyA.size} | ${ecB.annotatedGenes}/${onlyB.size}`
           : "Not assessable",
-        similarity: hasEcProfiles
-          ? jaccard(ecA.subclasses, ecB.subclasses)
-          : null
+        similarity: ecLevels.map((_, i) =>
+          hasEcProfiles ? jaccard(ecA.byLevel[i], ecB.byLevel[i]) : null
+        )
       });
     }
   }
 
   drawTable(pairs);
-  drawChart(pairs);
+  drawCharts(pairs);
 
   const plotted = pairs.filter(
-    pair => pair.overlap !== null && pair.similarity !== null
+    pair => pair.overlap !== null && pair.similarity.every(score => score !== null)
   ).length;
 
-  status.textContent = `${plotted} of ${pairs.length} pairs have both scores. `
+  status.textContent = `${plotted} of ${pairs.length} pairs have gene overlap and EC similarity at all four levels. `
     + "All pairs are listed in the table.";
 
   addDownloadButton();
 }
 
-// Plot only pathway pairs that have both similarity scores.
-function drawChart(pairs) {
+// Use the same pairs and scales in every panel, so the levels are comparable.
+function drawCharts(pairs) {
   const points = pairs.filter(
-    pair => pair.overlap !== null && pair.similarity !== null
+    pair => pair.overlap !== null && pair.similarity.every(score => score !== null)
   );
 
   const chart = d3.select("#trial-chart");
@@ -171,15 +188,27 @@ function drawChart(pairs) {
     return;
   }
 
+  const grid = chart.append("div")
+    .style("display", "grid")
+    .style("grid-template-columns", "repeat(auto-fit, minmax(min(100%, 340px), 1fr))")
+    .style("gap", "16px");
+
+  ecLevels.forEach((level, i) => drawChart(grid, points, level, i));
+}
+
+function drawChart(grid, points, level, i) {
+  const panel = grid.append("section");
+  panel.append("h3").text(`EC level ${level.depth} — ${level.name}`);
+
   const x = d3.scaleLinear().domain([0, 1]).range([65, 585]);
   const y = d3.scaleLinear().domain([0, 1]).range([305, 25]);
   const percent = d3.format(".0%");
 
-  const svg = chart.append("svg")
+  const svg = panel.append("svg")
     .attr("viewBox", "0 0 610 355")
     .style("width", "100%")
     .attr("role", "img")
-    .attr("aria-label", "Gene overlap versus EC subclass similarity");
+    .attr("aria-label", `Gene overlap versus EC level ${level.depth} similarity`);
 
   svg.append("g")
     .attr("transform", "translate(0,305)")
@@ -198,20 +227,20 @@ function drawChart(pairs) {
   svg.append("text")
     .attr("transform", "translate(17,165) rotate(-90)")
     .attr("text-anchor", "middle")
-    .text("EC subclass similarity (Jaccard)");
+    .text("EC similarity (Jaccard)");
 
   svg.selectAll("circle")
     .data(points)
     .join("circle")
     .attr("cx", pair => x(pair.overlap))
-    .attr("cy", pair => y(pair.similarity))
+    .attr("cy", pair => y(pair.similarity[i]))
     .attr("r", 6)
     .attr("fill", "#167768")
     .attr("opacity", 0.8)
     .append("title")
     .text(pair =>
       `${pair.label} | Gene overlap: ${percent(pair.overlap)}`
-      + ` | EC similarity: ${percent(pair.similarity)}`
+      + ` | EC level ${level.depth} similarity: ${percent(pair.similarity[i])}`
     );
 }
 
@@ -228,7 +257,8 @@ function drawTable(pairs) {
 
   const headings = [
     "Pair", "Genes A / B", "Shared genes",
-    "Gene overlap", "EC coverage A | B", "EC similarity"
+    "Gene overlap", "EC coverage A | B",
+    ...ecLevels.map(({ depth }) => `EC level ${depth}`)
   ];
 
   table.append("thead").append("tr")
@@ -249,7 +279,7 @@ function drawTable(pairs) {
       pair.shared ?? "Not assessable",
       score(pair.overlap),
       pair.coverage,
-      score(pair.similarity)
+      ...pair.similarity.map(score)
     ])
     .join("td")
     .text(value => value);
