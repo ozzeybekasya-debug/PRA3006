@@ -6,6 +6,9 @@
   <title>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</title>
 
   <style>
+    .small-text {
+      font-size: 0.9rem;
+    }
     body {
       max-width: 820px;
       margin: 60px auto;
@@ -48,7 +51,7 @@
 
   <details style="margin: 12px 0 0 20px;">
     <summary>What are EC classifications?</summary>
-    <p> The Enzyme Commission number (EC) is defined as a unique identifier 
+    <p class="small-text"> The Enzyme Commission number (EC) is defined as a unique identifier 
       assigned to enzymes based on the International Union of Biochemistry's 
       classification rules helping to determine an enzyme's identity 
       (Enzyme Commission Number - an Overview, n.d.). An EC number has four levels.
@@ -80,7 +83,7 @@
 
   <details style="margin: 12px 0 0 20px;">
     <summary>Information on the Investigated Pathways</summary>
-    <p>
+    <p class="small-text">
       The webpage compares 12 human pathways selected from WikiPathways.
       They cover three metabolic areas:
     </p>
@@ -105,12 +108,12 @@
 
   <details style="margin: 12px 0 0 20px;">
     <summary>Methodology</summary>
-    <p>
+    <p class="small-text">
       For each pathway pair, we first calculate gene overlap using
       Jaccard similarity: the number of shared genes divided by
       the total number of distinct genes across both lists.
     </p>
-    <p>
+    <p class="small-text">
       We then remove the shared genes from both lists and compare
       the EC annotations of the remaining genes. The current pilot
       uses the first two parts of each EC number, such as 3.5.
