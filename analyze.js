@@ -1,7 +1,7 @@
 let d3;
 
 const endpoint = "https://query.wikidata.org/sparql";
-const pathwayIds = ["WP534", "WP134", "WP690", "WP78"];
+const pathwayIds = ["WP4792", "WP4022"];
 const status = document.querySelector("#trial-status");
 
 <<<<<<< HEAD
