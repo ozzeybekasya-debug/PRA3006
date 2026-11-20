@@ -43,6 +43,73 @@
     enzymes encoded by non-shared genes, based on Enzyme Commission (EC)
     classification?</p>
 
+<details style="margin-top: 20px;">
+  <summary><strong>For more information</strong></summary>
+
+  <details style="margin: 12px 0 0 20px;">
+    <summary>What are EC classifications?</summary>
+    <p> The Enzyme Commission number (EC) is defined as a unique identifier 
+      assigned to enzymes based on the International Union of Biochemistry's 
+      classification rules helping to determine an enzyme's identity 
+      (Enzyme Commission Number - an Overview, 2014). An EC number has four levels:
+       <figure style="margin: 16px 0;">
+        <img
+        src="C:\Users\ozzey\Downloads\Enzyme_Commission_Numbers-visual_selection.png"
+        alt="The Image Showing the Four Parts of the EC Number"
+        style="display: block; max-width: 100%; height: auto;"
+        >
+        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
+          Figure 1. The 4 Parts of the EC Number.
+          Source: <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">LibreTexts-Biology</a>, n.d.
+        </figcaption>
+      </figure>
+
+      <figure style="margin: 16px 0;">
+        <img
+        src="C:\Users\ozzey\Downloads\The_Seven_Major_Classes_of_the_Enzyme_Commission-visual_selection.png"
+        alt="The Image Showing the 7 Major Classes of Enzyme Commission"
+        style="display: block; max-width: 100%; height: auto;"
+        >
+        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
+          Figure 1. The 7 Classes of EC classification.
+          Source: <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">LibreTexts-Biology</a>, n.d.
+        </figcaption>
+      </figure>
+    </p>
+  </details>
+
+  <details style="margin: 12px 0 0 20px;">
+    <summary>Information on the Investigated Pathways</summary>
+    <p>
+      The pilot compares 12 human pathways selected from WikiPathways.
+      They cover three metabolic areas:
+    </p>
+    <ul>
+      <li><strong>Carbohydrate and central energy metabolism</strong>
+        — for example, glycolysis and pentose phosphate metabolism.</li>
+      <li><strong>Lipid metabolism</strong>
+        — for example, fatty acid biosynthesis and beta-oxidation.</li>
+      <li><strong>Amino acid and redox metabolism</strong>
+        — for example, tryptophan and glutathione metabolism.</li>
+    </ul>
+  </details>
+
+  <details style="margin: 12px 0 0 20px;">
+    <summary>Methodology</summary>
+    <p>
+      For each pathway pair, we first calculate gene overlap using
+      Jaccard similarity: the number of shared genes divided by
+      the total number of distinct genes across both lists.
+    </p>
+    <p>
+      We then remove the shared genes from both lists and compare
+      the EC annotations of the remaining genes. The current pilot
+      uses the first two parts of each EC number, such as 3.5.
+      If either side has no usable EC annotations, we report
+      “Not assessable” instead of 0%.
+    </p>
+  </details>
+</details>
   <section id="trial-results" aria-labelledby="trial-heading" style="margin-top: 32px;">
     <h2 id="trial-heading">Pilot pathway comparison</h2>
     <p id="trial-status" role="status">Loading data from Wikidata…</p>
