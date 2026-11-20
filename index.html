@@ -107,19 +107,64 @@
   </details>
 
   <details style="margin: 12px 0 0 20px;">
-    <summary>Methodology</summary>
-    <p class="small-text">
-      For each pathway pair, we first calculate gene overlap using
-      Jaccard similarity: the number of shared genes divided by
-      the total number of distinct genes across both lists.
-    </p>
-    <p class="small-text">
-      We then remove the shared genes from both lists and compare
-      the EC annotations of the remaining genes. The current pilot
-      uses the first two parts of each EC number, such as 3.5.
-      If either side has no usable EC annotations, we report
-      “Not assessable” instead of 0%.
-    </p>
+  <summary>Methodology</summary>
+  <ol class="small-text">
+    <li>
+      <strong>Data collection.</strong>
+      12 human metabolic pathways are selected from WikiPathways.
+      Using two SPARQL queries the genes recorded as pathway members
+      in Wikidata and the EC numbers are retrieved.
+    </li>
+
+    <li>
+      <strong>Gene overlap.</strong>
+      For each unique pair of pathways, the Jaccard similarity is calculated
+      using all distinct genes retrieved for each pathway.
+      <figure style="margin: 16px 0;">
+        <img
+        src="./images/Jaccard.png"
+        alt="The Image Showing the Calculation of Jaccard Similarity Index"
+        style="display: block; max-width: 100%; height: auto;"
+        >
+        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
+          Figure 1. Jaccard Similarity Index, A = Pathway 1, B = Pathway 2.
+          Source: <a href="https://omicsforum.ca/t/what-is-jaccard-index-and-how-to-use-it-to-identify-pathways-of-interest/13645">OmicsForum</a>, (2026)
+        </figcaption>
+      </figure>
+    </li>
+
+    <li>
+      <strong>EC-based functional similarity.</strong>
+      The shared genes are removed before comparing
+      their EC annotations. Using the same complete EC numbers at every
+      level, four sets of distinct EC entries for each pathway is built.
+      For example, <code>3.5.4.6</code> contributes <code>3</code>,
+      <code>3.5</code>, <code>3.5.4</code>, and <code>3.5.4.6</code>
+      at levels 1 through 4, respectively. At each level, Jaccard similarity is calculated
+      by dividing the number of shared EC entries
+      by the total number of distinct EC entries across both sets.
+    </li>
+
+    <li>
+      <strong>Annotation coverage and missing data.</strong>
+      For each side of a pair, EC coverage is the number of non-shared
+      genes with at least one complete EC number out of all retrieved
+      non-shared genes. If either pathway had no retrieved genes,
+      neither score was assessable. If both gene lists were available
+      but either side lacked EC annotations for its non-shared genes,
+      only the EC similarity was marked as not assessable.
+      A score of 0% means both sets were available but had no entries
+      in common.
+    </li>
+
+    <li>
+      <strong>Visualisation.</strong>
+      We plotted gene overlap on the x-axis and EC similarity on the
+      y-axis in four scatterplots, one for each EC level. The plots
+      use the same assessable pairs and axis scales so the levels can
+      be compared directly. The results table includes all pairs.
+    </li>
+  </ol>
   </details>
 </details>
   <section id="trial-results" aria-labelledby="trial-heading" style="margin-top: 32px;">
