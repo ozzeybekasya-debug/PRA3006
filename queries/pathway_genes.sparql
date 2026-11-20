@@ -10,10 +10,8 @@ SELECT DISTINCT ?wpid ?pathwayLabel ?gene ?geneLabel
 WHERE {
   # VALUES restricts ?wpid to these four IDs.
   VALUES ?wpid {
-    "WP534"  # Glycolysis and gluconeogenesis
-    "WP134"  # Pentose phosphate metabolism
-    "WP690"  # Polyol pathway
-    "WP78"   # TCA cycle
+    "WP4792"  
+    "WP4022"
   }
 
   # Find the human pathways and their recorded members

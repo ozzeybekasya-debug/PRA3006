@@ -8,7 +8,7 @@ WHERE {
   {
     SELECT DISTINCT ?gene
     WHERE {
-      VALUES ?wpid { "WP534" "WP134" "WP690" "WP78" }
+      VALUES ?wpid { "WP4792" "WP4022" }
 
       ?pathway wdt:P2410 ?wpid ;
                wdt:P703 wd:Q15978631 ;
