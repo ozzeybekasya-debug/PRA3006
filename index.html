@@ -15,9 +15,26 @@
       padding: 0 24px;
       font-family: Arial, sans-serif;
       color: #0a2b3c;
-      background-color: #f2d0e8;
+      background-color: #ffffff;
+    }
+    .research-question-box {
+      background-color: #e3f1ea;
+      border: 1px solid #bedbcf;
+      border-left: 5px solid #397b68;
+      border-radius: 12px;
+      padding: 24px;
+      margin: 28px 0;
     }
 
+    .research-question-box h2 {
+      color: #163b3d;
+      margin-bottom: 12px;
+    }
+
+    .research-question-box p {
+      font-size: 1.1rem;
+      line-height: 1.7;
+    }
     h1 {
       font-family: Georgia, serif;
       font-size: clamp(2rem, 5vw, 3rem);
@@ -118,14 +135,16 @@
 
   <!-- RESEARCH QUESTION -->
 
-  <h2>Research Question</h2>
+  <div class="research-question-box">
+    <h2>Research Question</h2>
 
-  <p>
-    To what extent is gene overlap between human metabolic pathways
-    (from WikiPathways) associated with functional similarity among
-    their enzymes encoded by non-shared genes, based on Enzyme
-    Commission (EC) classification?
-  </p>
+    <p>
+      To what extent is gene overlap between human metabolic pathways
+      (from WikiPathways) associated with functional similarity among
+      their enzymes encoded by non-shared genes, based on Enzyme
+      Commission (EC) classification?
+    </p>
+  </div>
 
 
   <!-- ADDITIONAL INFORMATION -->
