@@ -6,6 +6,11 @@
   <title>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</title>
 
   <style>
+    .responsive-img {
+      width: 100%;      
+      max-width: 500px; 
+      height: auto;   
+    }
     body {
       max-width: 820px;
       margin: 60px auto;
@@ -68,6 +73,7 @@
         src="./images/Enzyme_Commission_Numbers-visual_selection.png"
         alt="The Image Showing the Four Parts of the EC Number"
         style="display: block; max-width: 100%; height: auto;"
+        class = ".responsive-img"
         >
         <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
           Figure 1. The 4 Parts of the EC Number.
@@ -80,6 +86,7 @@
         src="./images/The_Seven_Major_Classes_of_the_Enzyme_Commission-visual_selection.png"
         alt="The Image Showing the 7 Major Classes of Enzyme Commission"
         style="display: block; max-width: 100%; height: auto;"
+        class = ".responsive-img"
         >
         <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
           Figure 1. The 7 Classes of EC classification.
@@ -130,9 +137,10 @@
       using all distinct genes retrieved for each pathway.
       <figure style="margin: 16px 0;">
         <img
-        src="./images/Jaccard.png"
+        src="./images/Jaccard.png" 
         alt="The Image Showing the Calculation of Jaccard Similarity Index"
         style="display: block; max-width: 100%; height: auto;"
+        class = ".responsive-img"
         >
         <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
           Figure 1. Jaccard Similarity Index, A = Pathway 1, B = Pathway 2.
