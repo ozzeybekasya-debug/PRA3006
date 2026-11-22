@@ -14,7 +14,7 @@ and visualize them on a webpage using D3.js.
 
 ### Research Question
 
-To what extent is gene overlap between **human metabolic pathways** (from Wikipathways) associated with functional similarity among their enzymes encoded by nonshared genes, based on **Enzyme Commission (EC) classification**?
+To what extent is gene overlap associated with Enzyme Comission (EC) classification based functional similarity among enzymes encoded by non-shared genes across 12 selected human metabolic pathways from WikiPathways, and how does this association vary across the four EC classification level?
 
 ### Data Sources
 
