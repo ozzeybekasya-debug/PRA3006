@@ -1,40 +1,28 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</title>
 
   <style>
-    .responsive-img {
-      width: 100%;      
-      max-width: 500px; 
-      height: auto;   
-    }
+    /* General page styling */
     body {
       max-width: 820px;
       margin: 60px auto;
       padding: 0 24px;
       font-family: Arial, sans-serif;
-      color: #273841;
-      background-color: #c1e7da;
-    }
-    .small-text {
-      font-size: 0.9rem;
-    }
-    body {
-      max-width: 820px;
-      margin: 60px auto;
-      padding: 0 24px;
-      font-family: Arial, sans-serif;
-      color: #263238;
+      color: #0a2b3c;
+      background-color: #f2d0e8;
     }
 
     h1 {
       font-family: Georgia, serif;
       font-size: clamp(2rem, 5vw, 3rem);
       line-height: 1.15;
-      color: #163b3d;
+      color: #0e2527;
       margin: 0 0 32px;
     }
 
@@ -48,148 +36,321 @@
       line-height: 1.6;
       margin: 0;
     }
+
+    .small-text {
+      font-size: 0.9rem;
+      line-height: 1.6;
+    }
+
+    /* Images: consistent size and centred */
+    .responsive-img {
+      display: block;
+      width: 300px;
+      max-width: 100%;
+      height: 180px;
+      object-fit: contain;
+      margin: 0 auto;
+    }
+
+    /* Figures and captions */
+    figure {
+      margin: 20px auto;
+      text-align: center;
+    }
+
+    figcaption {
+      font-size: 0.85rem;
+      line-height: 1.5;
+      color: #526269;
+      margin-top: 8px;
+    }
+
+    /* Expandable information sections */
+    details {
+      margin-top: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      padding: 6px 0;
+    }
+
+    details > p,
+    details > ul,
+    details > ol {
+      margin-top: 12px;
+    }
+
+    /* Methodology spacing */
+    ol > li {
+      margin-bottom: 16px;
+      line-height: 1.6;
+    }
+
+    /* Pathway list */
+    .pathway-list > li {
+      margin-bottom: 14px;
+      line-height: 1.6;
+    }
+
+    /* Results section */
+    #trial-results {
+      margin-top: 32px;
+    }
+
+    #trial-chart {
+      max-width: 100%;
+    }
+
+    #trial-table {
+      overflow-x: auto;
+    }
+
   </style>
 </head>
+
 <body>
-  <h1>Functional Similarity and Gene Overlap Between Human Metabolic Pathways</h1>
+
+  <h1>
+    Functional Similarity and Gene Overlap Between
+    Human Metabolic Pathways
+  </h1>
+
+  <!-- RESEARCH QUESTION -->
 
   <h2>Research Question</h2>
-  <p>To what extent is gene overlap between human metabolic pathways
-    (from WikiPathways) associated with functional similarity among their
-    enzymes encoded by non-shared genes, based on Enzyme Commission (EC)
-    classification?</p>
 
-<details style="margin-top: 20px;">
-  <summary><strong>For more information</strong></summary>
+  <p>
+    To what extent is gene overlap between human metabolic pathways
+    (from WikiPathways) associated with functional similarity among
+    their enzymes encoded by non-shared genes, based on Enzyme
+    Commission (EC) classification?
+  </p>
 
-  <details style="margin: 12px 0 0 20px;">
-    <summary>What are EC classifications?</summary>
-    <p class="small-text"> The Enzyme Commission number (EC) is defined as a unique identifier 
-      assigned to enzymes based on the International Union of Biochemistry's 
-      classification rules helping to determine an enzyme's identity 
-      (Enzyme Commission Number - an Overview, n.d.). An EC number has four levels.
-       <figure style="margin: 16px 0;">
+
+  <!-- ADDITIONAL INFORMATION -->
+
+  <details style="margin-top: 20px;">
+
+    <summary>
+      <strong>For more information</strong>
+    </summary>
+
+
+    <!-- EC CLASSIFICATION -->
+
+    <details style="margin-left: 20px;">
+
+      <summary>What are EC classifications?</summary>
+
+      <p class="small-text">
+        The Enzyme Commission number (EC) is defined as a unique
+        identifier assigned to enzymes based on the International
+        Union of Biochemistry's classification rules helping to
+        determine an enzyme's identity
+        (Enzyme Commission Number - an Overview, n.d.).
+        An EC number has four levels.
+      </p>
+
+      <figure>
         <img
-        src="./images/Enzyme_Commission_Numbers-visual_selection.png"
-        alt="The Image Showing the Four Parts of the EC Number"
-        style="display: block; max-width: 100%; height: auto;"
-        class = ".responsive-img"
+          src="./images/Enzyme_Commission_Numbers-visual_selection.png"
+          alt="The four parts of the EC number"
+          class="responsive-img"
         >
-        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
+
+        <figcaption>
           Figure 1. The 4 Parts of the EC Number.
-          Source: <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">LibreTexts-Biology</a>, (n.d.)
+          <br>
+          Source:
+          <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">
+            LibreTexts-Biology
+          </a>, (n.d.)
         </figcaption>
       </figure>
 
-      <figure style="margin: 16px 0;">
+      <figure>
         <img
-        src="./images/The_Seven_Major_Classes_of_the_Enzyme_Commission-visual_selection.png"
-        alt="The Image Showing the 7 Major Classes of Enzyme Commission"
-        style="display: block; max-width: 100%; height: auto;"
-        class = ".responsive-img"
+          src="./images/The_Seven_Major_Classes_of_the_Enzyme_Commission-visual_selection.png"
+          alt="The seven major classes of Enzyme Commission"
+          class="responsive-img"
         >
-        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
-          Figure 1. The 7 Classes of EC classification.
-          Source: <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">LibreTexts-Biology</a>, (n.d.)
+
+        <figcaption>
+          Figure 2. The 7 Classes of EC Classification.
+          <br>
+          Source:
+          <a href="https://bio.libretexts.org/Courses/Roosevelt_University/BCHM_355_455_Biochemistry_%28Roosevelt_University%29/02%3A_Unit_2_-_Enzymes/2.01%3A_Enzyme_Thermodynamics/2.1.02%3A_Enzyme_Commission_Number">
+            LibreTexts-Biology
+          </a>, (n.d.)
         </figcaption>
       </figure>
+
+    </details>
+
+
+    <!-- INVESTIGATED PATHWAYS -->
+
+    <details style="margin-left: 20px;">
+
+      <summary>Information on the Investigated Pathways</summary>
+
+      <p class="small-text">
+        The webpage compares 12 human pathways selected from
+        WikiPathways. They cover three metabolic areas:
+      </p>
+
+      <ul class="small-text pathway-list">
+
+        <li>
+          <strong>Carbohydrate and central energy metabolism</strong>
+          <ul>
+            <li>WP534: Glycolysis and Gluconeogenesis</li>
+            <li>WP134: Pentose Phosphate Metabolism</li>
+            <li>WP500: Glycogen Synthesis and Degradation</li>
+            <li>WP78: TCA Cycle (also known as the Krebs or Citric Acid Cycle)</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Lipid metabolism</strong>
+          <ul>
+            <li>WP357: Fatty Acid Biosynthesis</li>
+            <li>WP143: Fatty Acid Beta-Oxidation</li>
+            <li>WP311: Ketone Body Synthesis and Degradation</li>
+            <li>WP197: Cholesterol Biosynthesis</li>
+          </ul>
+        </li>
+
+        <li>
+          <strong>Amino acid and redox metabolism</strong>
+          <ul>
+            <li>WP1495: Glycine Metabolism</li>
+            <li>WP465: Tryptophan Metabolism</li>
+            <li>WP497: Urea Cycle and Metabolism of Amino Groups</li>
+            <li>WP100: Glutathione Metabolism</li>
+          </ul>
+        </li>
+
+      </ul>
+
+    </details>
+
+
+    <!-- METHODOLOGY -->
+
+    <details style="margin-left: 20px;">
+
+      <summary>Methodology</summary>
+
+      <ol class="small-text">
+
+        <li>
+          <strong>Data collection.</strong>
+          12 human metabolic pathways are selected from WikiPathways.
+          Using two SPARQL queries the genes recorded as pathway
+          members in Wikidata and the EC numbers are retrieved.
+        </li>
+
+        <li>
+          <strong>Gene overlap.</strong>
+          For each unique pair of pathways, the Jaccard similarity
+          is calculated using all distinct genes retrieved for
+          each pathway.
+
+          <figure>
+            <img
+              src="./images/Jaccard.png"
+              alt="Calculation of the Jaccard Similarity Index"
+              class="responsive-img"
+            >
+
+            <figcaption>
+              Figure 3. Jaccard Similarity Index,
+              A = Pathway 1, B = Pathway 2.
+              <br>
+              Source:
+              <a href="https://omicsforum.ca/t/what-is-jaccard-index-and-how-to-use-it-to-identify-pathways-of-interest/13645">
+                OmicsForum
+              </a>, (2026)
+            </figcaption>
+          </figure>
+        </li>
+
+        <li>
+          <strong>EC-based functional similarity.</strong>
+          The shared genes are removed before comparing their EC
+          annotations. Using the same complete EC numbers at every
+          level, four sets of distinct EC entries for each pathway
+          is built.
+
+          For example, <code>3.5.4.6</code> contributes
+          <code>3</code>, <code>3.5</code>,
+          <code>3.5.4</code>, and <code>3.5.4.6</code>
+          at levels 1 through 4, respectively.
+
+          At each level, Jaccard similarity is calculated by
+          dividing the number of shared EC entries by the total
+          number of distinct EC entries across both sets.
+        </li>
+
+        <li>
+          <strong>Annotation coverage and missing data.</strong>
+          For each side of a pair, EC coverage is the number of
+          non-shared genes with at least one complete EC number
+          out of all retrieved non-shared genes.
+
+          If either pathway had no retrieved genes, neither
+          score was assessable.
+
+          If both gene lists were available but either side
+          lacked EC annotations for its non-shared genes,
+          only the EC similarity was marked as not assessable.
+
+          A score of 0% means both sets were available but
+          had no entries in common.
+        </li>
+
+        <li>
+          <strong>Visualisation.</strong>
+          We plotted gene overlap on the x-axis and EC similarity
+          on the y-axis in four scatterplots, one for each EC level.
+
+          The plots use the same assessable pairs and axis scales
+          so the levels can be compared directly.
+
+          The results table includes all pairs.
+        </li>
+
+      </ol>
+
+    </details>
+
+  </details>
+
+
+  <!-- PILOT RESULTS -->
+
+  <section id="trial-results" aria-labelledby="trial-heading">
+
+    <h2 id="trial-heading">
+      Pilot pathway comparison
+    </h2>
+
+    <p id="trial-status" role="status">
+      Loading data from Wikidata…
     </p>
-  </details>
 
-  <details style="margin: 12px 0 0 20px;">
-    <summary>Information on the Investigated Pathways</summary>
-    <p class="small-text">
-      The webpage compares 12 human pathways selected from WikiPathways.
-      They cover three metabolic areas:
-    </p>
-    <ul>
-      <li><strong>Carbohydrate and central energy metabolism</strong></li>
-      WP534: Glycolysis and Gluconeogenesis<br>
-      WP134: Pentose Phosphate Metabolism<br>
-      WP500: Glycogen Synthesis and Degradation<br>
-      WP78: TCA Cycle (also known as the Krebs or Citric Acid Cycle)</li>
-      <li><strong>Lipid metabolism</strong></li>
-      WP357: Fatty Acid Biosynthesis<br>
-      WP143: Fatty Acid Beta-Oxidation<br>
-      WP311: Ketone Body Synthesis and Degradation<br>
-      WP197: Cholesterol Biosynthesis
-      <li><strong>Amino acid and redox metabolism</strong></li>
-      WP1495: Glycine Metabolism<br>
-      WP465: Tryptophan Metabolism<br>
-      WP497: Urea Cycle and Metabolism of Amino Groups<br>
-      WP100: Glutathione Metabolism
-    </ul>
-  </details>
-
-  <details style="margin: 12px 0 0 20px;">
-  <summary>Methodology</summary>
-  <ol class="small-text">
-    <li>
-      <strong>Data collection.</strong>
-      12 human metabolic pathways are selected from WikiPathways.
-      Using two SPARQL queries the genes recorded as pathway members
-      in Wikidata and the EC numbers are retrieved.
-    </li>
-
-    <li>
-      <strong>Gene overlap.</strong>
-      For each unique pair of pathways, the Jaccard similarity is calculated
-      using all distinct genes retrieved for each pathway.
-      <figure style="margin: 16px 0;">
-        <img
-        src="./images/Jaccard.png" 
-        alt="The Image Showing the Calculation of Jaccard Similarity Index"
-        style="display: block; max-width: 100%; height: auto;"
-        class = ".responsive-img"
-        >
-        <figcaption style="font-size: 0.85rem; color: #526269; margin-top: 6px;">
-          Figure 1. Jaccard Similarity Index, A = Pathway 1, B = Pathway 2.
-          Source: <a href="https://omicsforum.ca/t/what-is-jaccard-index-and-how-to-use-it-to-identify-pathways-of-interest/13645">OmicsForum</a>, (2026)
-        </figcaption>
-      </figure>
-    </li>
-
-    <li>
-      <strong>EC-based functional similarity.</strong>
-      The shared genes are removed before comparing
-      their EC annotations. Using the same complete EC numbers at every
-      level, four sets of distinct EC entries for each pathway is built.
-      For example, <code>3.5.4.6</code> contributes <code>3</code>,
-      <code>3.5</code>, <code>3.5.4</code>, and <code>3.5.4.6</code>
-      at levels 1 through 4, respectively. At each level, Jaccard similarity is calculated
-      by dividing the number of shared EC entries
-      by the total number of distinct EC entries across both sets.
-    </li>
-
-    <li>
-      <strong>Annotation coverage and missing data.</strong>
-      For each side of a pair, EC coverage is the number of non-shared
-      genes with at least one complete EC number out of all retrieved
-      non-shared genes. If either pathway had no retrieved genes,
-      neither score was assessable. If both gene lists were available
-      but either side lacked EC annotations for its non-shared genes,
-      only the EC similarity was marked as not assessable.
-      A score of 0% means both sets were available but had no entries
-      in common.
-    </li>
-
-    <li>
-      <strong>Visualisation.</strong>
-      We plotted gene overlap on the x-axis and EC similarity on the
-      y-axis in four scatterplots, one for each EC level. The plots
-      use the same assessable pairs and axis scales so the levels can
-      be compared directly. The results table includes all pairs.
-    </li>
-  </ol>
-  </details>
-</details>
-  <section id="trial-results" aria-labelledby="trial-heading" style="margin-top: 32px;">
-    <h2 id="trial-heading">Pilot pathway comparison</h2>
-    <p id="trial-status" role="status">Loading data from Wikidata…</p>
     <div id="trial-chart"></div>
-    <div id="trial-table" style="overflow-x: auto;"></div>
+
+    <div id="trial-table"></div>
+
   </section>
 
+
+  <!-- JAVASCRIPT -->
+
   <script type="module" src="./analyze.js"></script>
+
 </body>
 </html>
