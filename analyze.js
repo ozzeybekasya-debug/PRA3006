@@ -1,13 +1,19 @@
-let d3;
+// Declare a variable to store the D3.js library later.
+// Right now d3 has no assigned values so its value is undefined.
+let d3; 
 
-const endpoint = "https://query.wikidata.org/sparql";
+// Define the URL of the Wikidata SPARQL endpoint.
+const endpoint = "https://query.wikidata.org/sparql"; 
 
+// Define the 12 WikiPathways pathways to compare.
+// [] --> arrays
 const pathwayIds = [
   "WP534", "WP134", "WP500", "WP78",
   "WP357", "WP143", "WP311", "WP197",
   "WP1495", "WP465", "WP497", "WP100"
 ];
 
+// Define the four EC classification levels by creating an array of four JavaScript Objects.
 const ecLevels = [
   { depth: 1, name: "Class" },
   { depth: 2, name: "Subclass" },
@@ -15,69 +21,97 @@ const ecLevels = [
   { depth: 4, name: "Full EC number" }
 ];
 
+// Find the status paragraph in the HTML document.
+// Concept: Document Object Model 
+// DOM --> representation of the HTML webpage that JavaScript can access and modify.
 const status = document.querySelector("#trial-status");
+
+// Find the results heading in the HTML document.
 const heading = document.querySelector("#trial-heading");
 
+// Change the heading text if the element exists.
 if (heading) {
   heading.textContent = "Pathway comparison";
 }
 
+// RETRIEVE DATA FROM WIKIDATA
 
-// ======================================================
-// 1. RETRIEVE DATA FROM WIKIDATA
-// ======================================================
-
-// Load a saved SPARQL query and send it to Wikidata.
+// This asynchronous function loads a SPARQL query from a local file,
+// sends it to the Wikidata SPARQL endpoint, and returns the results.
 async function runQuery(filename) {
+  // Construct the location of the SPARQL query file.
+  // Example: filename = "pathway_genes.sparql"
+  // import.meta.url refers to the location of this JavaScript module.
   const queryPath = new URL(
     `./queries/${filename}`,
     import.meta.url
   );
 
+  // Fetch the SPARQL query file.
+  // "await" pauses this function until the fetch operation finishes.
   const queryFile = await fetch(queryPath);
 
+  // Check whether the query file was loaded successfully.
+  // If not, stop execution and provide an error message.
   if (!queryFile.ok) {
     throw new Error(
       `Could not load queries/${filename} (HTTP ${queryFile.status}).`
     );
   }
 
+  // Create a URL object from the Wikidata SPARQL endpoint.
   const url = new URL(endpoint);
 
+  // Read the SPARQL query as text and attach it to the URL
+  // as a parameter named "query".
   url.searchParams.set("query", await queryFile.text());
+  
+   // Request the results in JSON format.
   url.searchParams.set("format", "json");
 
+  // Attempt to retrieve the query results from Wikidata.
   try {
+    // Send the SPARQL query to Wikidata.
     const response = await fetch(url, {
+      // Specify that the response should use the
+      // SPARQL Query Results JSON format.
       headers: {
         Accept: "application/sparql-results+json"
       },
+      // Abort the request if it takes longer than 60 seconds.
       signal: AbortSignal.timeout(60000)
     });
 
+    // Check whether Wikidata returned a successful HTTP response.
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
+    // Convert the JSON response into a JavaScript object.
     const data = await response.json();
 
+    // Return the actual SPARQL result rows (variable bindings).
+    // These rows contain information such as pathway IDs,
+    // gene URIs, and EC numbers, depending on the query.
     return data.results.bindings;
 
   } catch (error) {
+
+    // Determine whether the request failed because of a timeout
+    // or another error, such as an HTTP or network failure.
     const reason = error.name === "TimeoutError"
       ? "No response within 60 seconds. Try reloading the page."
       : error.message;
 
+    // Report which query failed and why.
+    // The error is passed to the code calling this function.
     throw new Error(
       `Wikidata request for ${filename} failed. ${reason}`
     );
   }
 }
 
-
-// ======================================================
-// 2. SET OPERATIONS AND JACCARD SIMILARITY
-// ======================================================
+// SET OPERATIONS AND JACCARD SIMILARITY
 
 // Find entries shared by two sets.
 function intersection(a, b) {
@@ -102,10 +136,7 @@ function jaccard(a, b) {
     : null;
 }
 
-
-// ======================================================
-// 3. BUILD EC PROFILES
-// ======================================================
+// BUILD EC PROFILES
 
 function ecProfile(genes, ecByGene) {
   const byLevel = ecLevels.map(() => new Set());
@@ -142,10 +173,7 @@ function ecProfile(genes, ecByGene) {
   };
 }
 
-
-// ======================================================
-// 4. MAIN ANALYSIS
-// ======================================================
+// MAIN ANALYSIS
 
 async function main() {
   status.textContent = "Loading D3…";
@@ -277,10 +305,7 @@ async function main() {
   addDownloadButton();
 }
 
-
-// ======================================================
-// 5. PEARSON CORRELATION AND LINEAR REGRESSION
-// ======================================================
+// PEARSON CORRELATION AND LINEAR REGRESSION
 
 // Pearson's r measures linear association.
 //
@@ -372,9 +397,7 @@ function linearStatistics(points, levelIndex) {
 }
 
 
-// ======================================================
-// 6. CREATE THE FOUR SCATTERPLOTS
-// ======================================================
+// CREATE THE FOUR SCATTERPLOTS
 
 // Use the same assessable pairs and axis scales
 // for all four EC classification levels.
@@ -413,9 +436,7 @@ function drawCharts(pairs) {
 }
 
 
-// ======================================================
-// 7. DRAW EACH SCATTERPLOT WITH REGRESSION LINE
-// ======================================================
+// DRAW EACH SCATTERPLOT WITH REGRESSION LINE
 
 function drawChart(grid, points, level, i) {
 
@@ -523,10 +544,8 @@ function drawChart(grid, points, level, i) {
       `url(#${clipId})`
     );
 
-  // --------------------------------------------------
   // ORANGE DASHED LINE: LINEAR REGRESSION
-  // --------------------------------------------------
-
+ 
   if (stats.slope !== null) {
 
     // Draw only within the observed x range.
@@ -553,9 +572,7 @@ function drawChart(grid, points, level, i) {
       .attr("stroke-dasharray", "9 6");
   }
 
-  // --------------------------------------------------
   // GREEN DOTS: PATHWAY PAIRS
-  // --------------------------------------------------
 
   plot.selectAll("circle")
     .data(points)
@@ -580,10 +597,8 @@ function drawChart(grid, points, level, i) {
         percent(pair.similarity[i])
     );
 
-  // ==================================================
-  // 8. CHART LEGEND
-  // ==================================================
-
+  // CHART LEGEND
+ 
   const legend = panel.append("div")
     .style("display", "flex")
     .style("flex-wrap", "wrap")
@@ -640,10 +655,7 @@ function drawChart(grid, points, level, i) {
     );
 }
 
-
-// ======================================================
 // 9. RESULTS TABLE
-// ======================================================
 
 // List all pathway pairs, including those that
 // cannot be plotted.
@@ -707,71 +719,7 @@ function drawTable(pairs) {
 }
 
 
-// ======================================================
-// 10. DOWNLOAD RESULTS AS HTML
-// ======================================================
-
-// Save the rendered webpage, including SVG plots
-// and the results table.
-
-function addDownloadButton() {
-
-  const button = document.createElement("button");
-
-  button.id = "download-html";
-  button.type = "button";
-  button.textContent = "Download HTML";
-
-  button.style.marginTop = "16px";
-
-  button.addEventListener("click", () => {
-
-    const page =
-      document.documentElement.cloneNode(true);
-
-    // The copied page already contains the results.
-    // Therefore, scripts are no longer needed.
-    page.querySelectorAll(
-      "script, #download-html"
-    ).forEach(element => element.remove());
-
-    const html =
-      "<!DOCTYPE html>\n" + page.outerHTML;
-
-    const file = new Blob(
-      [html],
-      {
-        type: "text/html;charset=utf-8"
-      }
-    );
-
-    const url = URL.createObjectURL(file);
-
-    const link = document.createElement("a");
-
-    link.href = url;
-    link.download = "PRA3006-pilot-results.html";
-
-    document.body.append(link);
-
-    link.click();
-    link.remove();
-
-    setTimeout(
-      () => URL.revokeObjectURL(url),
-      1000
-    );
-  });
-
-  document.querySelector(
-    "#trial-results"
-  ).append(button);
-}
-
-
-// ======================================================
-// 11. RUN ANALYSIS
-// ======================================================
+// RUN ANALYSIS
 
 main().catch(error => {
 
