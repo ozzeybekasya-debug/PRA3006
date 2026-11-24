@@ -479,7 +479,10 @@ function drawChart(grid, points, level, i) {
   const y = d3.scaleLinear()
     .domain([0, 1])
     .range([305, 25]);
-
+  
+  // Convert decimal values into percentages for display.
+  const percent = d3.format(".0%");
+  
   const svg = panel.append("svg")
     .attr("viewBox", "0 0 610 355")
     .style("width", "100%")
@@ -498,7 +501,7 @@ function drawChart(grid, points, level, i) {
         .tickValues([0, 0.05, 0.10, 0.15, 0.20])
         .tickFormat(percent)
   );
-  
+
   // Y-axis.
   svg.append("g")
     .attr("transform", "translate(65,0)")
