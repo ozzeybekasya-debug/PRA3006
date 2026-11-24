@@ -302,7 +302,6 @@ async function main() {
     "and EC similarity at all four levels. " +
     "All pairs are listed in the table.";
 
-  addDownloadButton();
 }
 
 // PEARSON CORRELATION AND LINEAR REGRESSION
@@ -482,7 +481,7 @@ function drawChart(grid, points, level, i) {
   
   // Convert decimal values into percentages for display.
   const percent = d3.format(".0%");
-  
+
   const svg = panel.append("svg")
     .attr("viewBox", "0 0 610 355")
     .style("width", "100%")
