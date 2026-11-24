@@ -188,13 +188,28 @@ async function main() {
     );
   }
 
-  status.textContent =
-    "Loading pathway genes and EC numbers from Wikidata…";
+ // First, retrieve pathway genes from Wikidata.
+  status.textContent = "Loading pathway genes...";
 
-  const [geneRows, ecRows] = await Promise.all([
-    runQuery("pathway_genes.sparql"),
-    runQuery("enzyme_ec.sparql")
-  ]);
+  console.log("Starting pathway_genes.sparql");
+
+  const geneRows = await runQuery("pathway_genes.sparql");
+
+  console.log("Gene rows retrieved:", geneRows.length);
+
+
+  // Next, retrieve EC annotations from Wikidata.
+  status.textContent = "Loading EC numbers...";
+
+  console.log("Starting enzyme_ec.sparql");
+
+  const ecRows = await runQuery("enzyme_ec.sparql");
+
+  console.log("EC rows retrieved:", ecRows.length);
+
+
+  // Both queries have finished successfully.
+  status.textContent = "Calculating pathway similarities...";
 
   // Keep all 12 selected pathways.
   const genesByPathway = new Map(
