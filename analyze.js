@@ -490,15 +490,15 @@ function drawChart(grid, points, level, i) {
       `Gene overlap and EC level ${level.depth} similarity with linear regression`
     );
 
-  // X-axis.
+// X-axis: Display ticks at 0%, 5%, 10%, 15%, 20%.
   svg.append("g")
     .attr("transform", "translate(0,305)")
     .call(
       d3.axisBottom(x)
-        .ticks(5)
+        .tickValues([0, 0.05, 0.10, 0.15, 0.20])
         .tickFormat(percent)
-    );
-
+  );
+  
   // Y-axis.
   svg.append("g")
     .attr("transform", "translate(65,0)")
