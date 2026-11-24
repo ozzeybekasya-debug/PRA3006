@@ -469,16 +469,16 @@ function drawChart(grid, points, level, i) {
         : `Pearson r = ${fmt(stats.r)} · R² = ${fmt(stats.rSquared)} · n = ${stats.n}`
     );
 
-  // Both axes use the same 0–1 Jaccard scale.
+// X-axis: Gene overlap from 0% to 20%
+// Y-axis: EC similarity from 0% to 100%
+
   const x = d3.scaleLinear()
-    .domain([0, 1])
+    .domain([0, 0.2])
     .range([65, 585]);
 
   const y = d3.scaleLinear()
     .domain([0, 1])
     .range([305, 25]);
-
-  const percent = d3.format(".0%");
 
   const svg = panel.append("svg")
     .attr("viewBox", "0 0 610 355")
