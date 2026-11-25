@@ -78,8 +78,8 @@ async function runQuery(filename) {
       headers: {
         Accept: "application/sparql-results+json"
       },
-      // Abort the request if it takes longer than 60 seconds.
-      signal: AbortSignal.timeout(60000)
+      // Abort the request if it takes longer than 100 seconds.
+      signal: AbortSignal.timeout(100000)
     });
 
     // Check whether Wikidata returned a successful HTTP response.
