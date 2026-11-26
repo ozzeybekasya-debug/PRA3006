@@ -1,66 +1,57 @@
-// 1. INITIALIZATION AND CONFIGURATION
-
-// Declare a variable to store the D3.js library once it is loaded.
+// 1. INITIAL SETUP
+// Declaring a variable to store the D3.js library once it is loaded.
 let d3;
 
-// Define the address of the Wikidata SPARQL Query Service.
+// Defining the address of the Wikidata SPARQL Query Service as an endpoint.
 const endpoint = "https://query.wikidata.org/sparql";
 
-// Define the 12 WikiPathways pathways selected for comparison.
+// Defining the 12 WikiPathways pathways selected for comparison.
 const pathwayIds = [
   "WP534", "WP134", "WP500", "WP78",
   "WP357", "WP143", "WP311", "WP197",
   "WP1495", "WP465", "WP497", "WP100"
 ];
 
-// Define the four levels of EC classification and their labels.
+// Defining the four levels of EC classification and their labels.
 const ecLevels = [
   { depth: 1, name: "Class" },
   { depth: 2, name: "Subclass" },
   { depth: 3, name: "Sub-subclass" },
   { depth: 4, name: "Full EC number" }
-];
+]; 
 
-// Select the HTML elements used to display the status and heading.
+// Selecting the HTML elements used to display the status and heading.
 const status = document.querySelector("#trial-status");
 const heading = document.querySelector("#trial-heading");
 
-// Update the results heading if the HTML element exists.
-if (heading) {
-  heading.textContent = "Pathway comparison";
-}
-
 // 2. RETRIEVE DATA FROM WIKIDATA
-
-// Load a SPARQL query file, execute it on Wikidata and return its results.
+// Loading a SPARQL query file, execute it on Wikidata and return its results.
 async function runQuery(filename) {
-
-  // Construct the absolute URL of the SPARQL query file.
+  // Constructing the absolute URL of the SPARQL query file.
   const queryPath = new URL(
     `./queries/${filename}`,
     import.meta.url
   );
 
-  // Retrieve the SPARQL query file.
+  // Retrieving the SPARQL query file.
   const queryFile = await fetch(queryPath);
 
-  // Throw an error if the query file cannot be loaded.
+  // Throwing an error if the query file cannot be loaded.
   if (!queryFile.ok) {
     throw new Error(
       `Could not load queries/${filename} (HTTP ${queryFile.status}).`
     );
   }
 
-  // Create a URL object pointing to the Wikidata endpoint.
+  // Creating a URL object pointing to the Wikidata endpoint.
   const url = new URL(endpoint);
 
-  // Attach the SPARQL query and request JSON-formatted results.
+  // Attaching the SPARQL query and request JSON formatted results.
   url.searchParams.set("query", await queryFile.text());
   url.searchParams.set("format", "json");
 
   try {
-
-    // Send the query to Wikidata with a JSON response preference and a 100-second timeout.
+    // Sending the query to Wikidata with a JSON response preference and a 100-second timeout.
     const response = await fetch(url, {
       headers: {
         Accept: "application/sparql-results+json"
@@ -68,25 +59,25 @@ async function runQuery(filename) {
       signal: AbortSignal.timeout(100000)
     });
 
-    // Throw an error if Wikidata returns an unsuccessful HTTP response.
+    // Throwing an error if Wikidata returns an unsuccessful HTTP response.
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    // Parse the JSON response into a JavaScript object.
+    // Converting the JSON response into a JavaScript object.
     const data = await response.json();
 
-    // Return the array containing the SPARQL result rows.
+    // Returning the array containing the SPARQL result rows.
     return data.results.bindings;
 
   } catch (error) {
 
-    // Distinguish timeout errors from other request errors.
+    // Distinguishing timeout errors from other request errors.
     const reason = error.name === "TimeoutError"
-      ? "No response within 60 seconds. Try reloading the page."
+      ? "No response within 100 seconds. Try reloading the page."
       : error.message;
 
-    // Report the failed query and its error message.
+    // Reporting the failed query and its error message.
     throw new Error(
       `Wikidata request for ${filename} failed. ${reason}`
     );
@@ -94,8 +85,7 @@ async function runQuery(filename) {
 }
 
 // 3. SET OPERATIONS AND JACCARD SIMILARITY
-
-// Return a Set containing the elements shared by both Sets.
+// Returning a Set containing the elements shared by both Sets.
 function intersection(a, b) {
   return new Set(
     [...a].filter(value => b.has(value))
@@ -122,7 +112,6 @@ function jaccard(a, b) {
 }
 
 // 4. BUILD EC PROFILES
-
 // Construct EC profiles at all four classification levels for a given Set of genes.
 function ecProfile(genes, ecByGene) {
 
@@ -167,7 +156,6 @@ function ecProfile(genes, ecByGene) {
 }
 
 // 5. MAIN ANALYSIS
-
 // Coordinate data retrieval, data processing, pathway comparisons and visualization.
 async function main() {
 
@@ -206,7 +194,6 @@ async function main() {
 
 
   // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
-
   // Initialize a Map associating each selected pathway with an empty Set of genes.
   const genesByPathway = new Map(
     pathwayIds.map(id => [id, new Set()])
@@ -227,7 +214,6 @@ async function main() {
   }
 
   // 5.2 ORGANIZE GENE-EC ASSOCIATIONS
-
   // Initialize a Map associating gene URIs with Sets of EC numbers.
   const ecByGene = new Map();
 
@@ -257,7 +243,6 @@ async function main() {
   }
 
   // 5.3 COMPARE PATHWAY PAIRS
-
   // Initialize an array to store the results of all pathway comparisons.
   const pairs = [];
 
@@ -326,7 +311,6 @@ async function main() {
   }
 
   // 5.4 DISPLAY ANALYSIS RESULTS
-
   // Generate the results table and the four scatterplots.
   drawTable(pairs);
   drawCharts(pairs);
@@ -346,7 +330,6 @@ async function main() {
 }
 
 // 6. PEARSON CORRELATION AND LINEAR REGRESSION
-
 // Calculate Pearson r, R² and linear regression coefficients for one EC level.
 function linearStatistics(points, levelIndex) {
 
@@ -436,7 +419,6 @@ function linearStatistics(points, levelIndex) {
 }
 
 // 7. PREPARE THE FOUR SCATTERPLOTS
-
 // Prepare the common dataset and layout for all four EC classification scatterplots.
 function drawCharts(pairs) {
 
@@ -477,7 +459,6 @@ function drawCharts(pairs) {
 }
 
 // 8. DRAW EACH INDIVIDUAL SCATTERPLOT
-
 // Create a scatterplot displaying gene overlap and EC similarity at one classification level.
 function drawChart(grid, points, level, i) {
 
@@ -499,7 +480,6 @@ function drawChart(grid, points, level, i) {
     );
 
   // 8.2 DISPLAY STATISTICAL RESULTS
-
   // Calculate the statistical results for the current EC classification level.
   const stats = linearStatistics(points, i);
 
@@ -517,7 +497,6 @@ function drawChart(grid, points, level, i) {
     );
 
   // 8.3 DEFINE SCALES AND SVG CONTAINER
-
   // Map gene overlap values from 0–20% to horizontal SVG coordinates.
   const x = d3.scaleLinear()
     .domain([0, 0.2])
@@ -543,7 +522,6 @@ function drawChart(grid, points, level, i) {
     );
 
   // 8.4 CREATE AXES AND AXIS LABELS
-
   // Draw the horizontal axis with percentage ticks from 0% to 20%.
   svg.append("g")
     .attr("transform", "translate(0,305)")
@@ -582,7 +560,6 @@ function drawChart(grid, points, level, i) {
 
 
   // 8.5 DEFINE THE VISIBLE PLOTTING AREA
-
   // Generate a unique identifier for the current chart's clipping region.
   const clipId = `trial-plot-clip-${i}`;
 
@@ -605,7 +582,6 @@ function drawChart(grid, points, level, i) {
 
 
   // 8.6 DRAW THE LINEAR REGRESSION LINE
-
   // Draw the regression line only if valid regression statistics are available.
   if (stats.slope !== null) {
 
@@ -637,7 +613,6 @@ function drawChart(grid, points, level, i) {
 
 
   // 8.7 DRAW THE PATHWAY PAIRS
-
   // Bind pathway-pair data to green circles positioned by gene overlap and EC similarity.
   plot.selectAll("circle")
     .data(points)
@@ -665,7 +640,6 @@ function drawChart(grid, points, level, i) {
     );
 
   // 8.8 CREATE THE CHART LEGEND
-
   // Create and style the container for the chart legend.
   const legend = panel.append("div")
     .style("display", "flex")
@@ -729,7 +703,6 @@ function drawChart(grid, points, level, i) {
 }
 
 // 9. GENERATE THE RESULTS TABLE
-
 // Create a table containing all pathway comparisons, including non-assessable pairs.
 function drawTable(pairs) {
 
@@ -795,7 +768,6 @@ function drawTable(pairs) {
 }
 
 // 10. EXECUTE THE ANALYSIS
-
 // Execute the main function and handle any errors propagated during the analysis.
 main().catch(error => {
 
