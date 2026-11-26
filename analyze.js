@@ -1,19 +1,19 @@
-// Declare a variable to store the D3.js library later.
-// Right now d3 has no assigned values so its value is undefined.
-let d3; 
+// 1. INITIALIZATION AND CONFIGURATION
 
-// Define the URL of the Wikidata SPARQL endpoint.
-const endpoint = "https://query.wikidata.org/sparql"; 
+// Declare a variable to store the D3.js library once it is loaded.
+let d3;
 
-// Define the 12 WikiPathways pathways to compare.
-// [] --> arrays
+// Define the address of the Wikidata SPARQL Query Service.
+const endpoint = "https://query.wikidata.org/sparql";
+
+// Define the 12 WikiPathways pathways selected for comparison.
 const pathwayIds = [
   "WP534", "WP134", "WP500", "WP78",
   "WP357", "WP143", "WP311", "WP197",
   "WP1495", "WP465", "WP497", "WP100"
 ];
 
-// Define the four EC classification levels by creating an array of four JavaScript Objects.
+// Define the four levels of EC classification and their labels.
 const ecLevels = [
   { depth: 1, name: "Class" },
   { depth: 2, name: "Subclass" },
@@ -21,144 +21,136 @@ const ecLevels = [
   { depth: 4, name: "Full EC number" }
 ];
 
-// Find the status paragraph in the HTML document.
-// Concept: Document Object Model 
-// DOM --> representation of the HTML webpage that JavaScript can access and modify.
+// Select the HTML elements used to display the status and heading.
 const status = document.querySelector("#trial-status");
-
-// Find the results heading in the HTML document.
 const heading = document.querySelector("#trial-heading");
 
-// Change the heading text if the element exists.
+// Update the results heading if the HTML element exists.
 if (heading) {
   heading.textContent = "Pathway comparison";
 }
 
-// RETRIEVE DATA FROM WIKIDATA
+// 2. RETRIEVE DATA FROM WIKIDATA
 
-// This asynchronous function loads a SPARQL query from a local file,
-// sends it to the Wikidata SPARQL endpoint, and returns the results.
+// Load a SPARQL query file, execute it on Wikidata and return its results.
 async function runQuery(filename) {
-  // Construct the location of the SPARQL query file.
-  // Example: filename = "pathway_genes.sparql"
-  // import.meta.url refers to the location of this JavaScript module.
+
+  // Construct the absolute URL of the SPARQL query file.
   const queryPath = new URL(
     `./queries/${filename}`,
     import.meta.url
   );
 
-  // Fetch the SPARQL query file.
-  // "await" pauses this function until the fetch operation finishes.
+  // Retrieve the SPARQL query file.
   const queryFile = await fetch(queryPath);
 
-  // Check whether the query file was loaded successfully.
-  // If not, stop execution and provide an error message.
+  // Throw an error if the query file cannot be loaded.
   if (!queryFile.ok) {
     throw new Error(
       `Could not load queries/${filename} (HTTP ${queryFile.status}).`
     );
   }
 
-  // Create a URL object from the Wikidata SPARQL endpoint.
+  // Create a URL object pointing to the Wikidata endpoint.
   const url = new URL(endpoint);
 
-  // Read the SPARQL query as text and attach it to the URL
-  // as a parameter named "query".
+  // Attach the SPARQL query and request JSON-formatted results.
   url.searchParams.set("query", await queryFile.text());
-  
-   // Request the results in JSON format.
   url.searchParams.set("format", "json");
 
-  // Attempt to retrieve the query results from Wikidata.
   try {
-    // Send the SPARQL query to Wikidata.
+
+    // Send the query to Wikidata with a JSON response preference and a 100-second timeout.
     const response = await fetch(url, {
-      // Specify that the response should use the
-      // SPARQL Query Results JSON format.
       headers: {
         Accept: "application/sparql-results+json"
       },
-      // Abort the request if it takes longer than 100 seconds.
       signal: AbortSignal.timeout(100000)
     });
 
-    // Check whether Wikidata returned a successful HTTP response.
+    // Throw an error if Wikidata returns an unsuccessful HTTP response.
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    // Convert the JSON response into a JavaScript object.
+    // Parse the JSON response into a JavaScript object.
     const data = await response.json();
 
-    // Return the actual SPARQL result rows (variable bindings).
-    // These rows contain information such as pathway IDs,
-    // gene URIs, and EC numbers, depending on the query.
+    // Return the array containing the SPARQL result rows.
     return data.results.bindings;
 
   } catch (error) {
 
-    // Determine whether the request failed because of a timeout
-    // or another error, such as an HTTP or network failure.
+    // Distinguish timeout errors from other request errors.
     const reason = error.name === "TimeoutError"
       ? "No response within 60 seconds. Try reloading the page."
       : error.message;
 
-    // Report which query failed and why.
-    // The error is passed to the code calling this function.
+    // Report the failed query and its error message.
     throw new Error(
       `Wikidata request for ${filename} failed. ${reason}`
     );
   }
 }
 
-// SET OPERATIONS AND JACCARD SIMILARITY
+// 3. SET OPERATIONS AND JACCARD SIMILARITY
 
-// Find entries shared by two sets.
+// Return a Set containing the elements shared by both Sets.
 function intersection(a, b) {
   return new Set(
     [...a].filter(value => b.has(value))
   );
 }
 
-// Find entries in a that are absent from b.
+// Return a Set containing elements in a that are absent from b.
 function difference(a, b) {
   return new Set(
     [...a].filter(value => !b.has(value))
   );
 }
 
-// Jaccard similarity = intersection / union.
+// Calculate the Jaccard similarity between two Sets.
 function jaccard(a, b) {
+
+  // Calculate the number of unique elements across both Sets.
   const unionSize = new Set([...a, ...b]).size;
 
+  // Divide the intersection size by the union size, or return null if the union is empty.
   return unionSize > 0
     ? intersection(a, b).size / unionSize
     : null;
 }
 
-// BUILD EC PROFILES
+// 4. BUILD EC PROFILES
 
+// Construct EC profiles at all four classification levels for a given Set of genes.
 function ecProfile(genes, ecByGene) {
+
+  // Create four independent empty Sets to store unique EC classifications.
   const byLevel = ecLevels.map(() => new Set());
 
+  // Initialize a counter for genes with usable EC annotations.
   let annotatedGenes = 0;
 
+  // Iterate over every gene in the provided Set.
   for (const gene of genes) {
+
+    // Retrieve the EC numbers associated with the current gene.
     const codes = ecByGene.get(gene);
 
+    // Skip the gene if it has no usable EC annotations.
     if (!codes?.size) continue;
 
+    // Count the gene as having usable EC annotations.
     annotatedGenes++;
 
+    // Process every EC number associated with the current gene.
     for (const code of codes) {
+
+      // Split the EC number into its four numerical components as strings.
       const parts = code.split(".");
 
-      // Example: 3.5.4.6 contributes:
-      // Level 1: 3
-      // Level 2: 3.5
-      // Level 3: 3.5.4
-      // Level 4: 3.5.4.6
-
+      // Construct and store the appropriate EC prefix at each classification level.
       ecLevels.forEach(({ depth }, i) => {
         byLevel[i].add(
           parts.slice(0, depth).join(".")
@@ -167,17 +159,22 @@ function ecProfile(genes, ecByGene) {
     }
   }
 
+  // Return the four EC profiles and the number of annotated genes.
   return {
     byLevel,
     annotatedGenes
   };
 }
 
-// MAIN ANALYSIS
+// 5. MAIN ANALYSIS
 
+// Coordinate data retrieval, data processing, pathway comparisons and visualization.
 async function main() {
+
+  // Display the current loading status.
   status.textContent = "Loading D3…";
 
+  // Dynamically import D3.js and report any loading errors.
   try {
     d3 = await import(
       "https://cdn.jsdelivr.net/npm/d3@7/+esm"
@@ -188,52 +185,60 @@ async function main() {
     );
   }
 
- // First, retrieve pathway genes from Wikidata.
+  // Retrieve pathway-gene associations and report the number of returned rows.
   status.textContent = "Loading pathway genes...";
-
   console.log("Starting pathway_genes.sparql");
 
   const geneRows = await runQuery("pathway_genes.sparql");
 
   console.log("Gene rows retrieved:", geneRows.length);
 
-
-  // Next, retrieve EC annotations from Wikidata.
+  // Retrieve gene-EC associations and report the number of returned rows.
   status.textContent = "Loading EC numbers...";
-
   console.log("Starting enzyme_ec.sparql");
 
   const ecRows = await runQuery("enzyme_ec.sparql");
 
   console.log("EC rows retrieved:", ecRows.length);
 
-
-  // Both queries have finished successfully.
+  // Update the status once both queries have finished.
   status.textContent = "Calculating pathway similarities...";
 
-  // Keep all 12 selected pathways.
+
+  // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
+
+  // Initialize a Map associating each selected pathway with an empty Set of genes.
   const genesByPathway = new Map(
     pathwayIds.map(id => [id, new Set()])
   );
 
+  // Process each retrieved pathway-gene association.
   for (const row of geneRows) {
+
+    // Retrieve the gene Set associated with the pathway in the current row.
     const genes = genesByPathway.get(
       row.wpid?.value
     );
 
+    // Add the gene URI if the pathway and gene identifier are available.
     if (genes && row.gene?.value) {
       genes.add(row.gene.value);
     }
   }
 
-  // Join EC annotations to pathway genes by gene URI.
-  // Only complete four-part EC numbers are accepted.
+  // 5.2 ORGANIZE GENE-EC ASSOCIATIONS
+
+  // Initialize a Map associating gene URIs with Sets of EC numbers.
   const ecByGene = new Map();
 
+  // Process each retrieved gene-EC association.
   for (const row of ecRows) {
+
+    // Extract the gene URI and remove surrounding whitespace from the EC number.
     const gene = row.gene?.value;
     const ec = row.ecNumber?.value?.trim();
 
+    // Skip rows with missing information or EC numbers that lack four numerical components.
     if (
       !gene ||
       !ec ||
@@ -242,57 +247,75 @@ async function main() {
       continue;
     }
 
+    // Create an empty EC Set if the gene has not been encountered previously.
     if (!ecByGene.has(gene)) {
       ecByGene.set(gene, new Set());
     }
 
+    // Add the valid EC number to the corresponding gene's Set.
     ecByGene.get(gene).add(ec);
   }
 
+  // 5.3 COMPARE PATHWAY PAIRS
+
+  // Initialize an array to store the results of all pathway comparisons.
   const pairs = [];
 
-  // Compare every unique pair of pathways.
+  // Generate all 66 unique pathway pairs without self-comparisons or reversed duplicates.
   for (let i = 0; i < pathwayIds.length; i++) {
     for (let j = i + 1; j < pathwayIds.length; j++) {
 
+      // Retrieve the identifiers of the two pathways being compared.
       const idA = pathwayIds[i];
       const idB = pathwayIds[j];
 
+      // Retrieve the Sets of genes associated with both pathways.
       const a = genesByPathway.get(idA);
       const b = genesByPathway.get(idB);
 
+      // Check whether both pathways have retrieved gene lists.
       const hasGeneLists =
         a.size > 0 && b.size > 0;
 
-      // Remove shared genes before comparing EC profiles.
+      // Identify the genes unique to each pathway by removing shared genes.
       const onlyA = difference(a, b);
       const onlyB = difference(b, a);
 
+      // Construct EC profiles using only the nonshared genes of each pathway.
       const ecA = ecProfile(onlyA, ecByGene);
       const ecB = ecProfile(onlyB, ecByGene);
 
+      // Check whether both pathways have sufficient data to calculate EC similarity.
       const hasEcProfiles =
         hasGeneLists &&
         ecA.annotatedGenes > 0 &&
         ecB.annotatedGenes > 0;
 
+      // Store the results of the current pathway comparison.
       pairs.push({
+
+        // Create a label identifying the pathway pair.
         label: `${idA} vs ${idB}`,
 
+        // Record the number of retrieved genes in each pathway.
         geneCounts: `${a.size} / ${b.size}`,
 
+        // Calculate the number of genes shared by both pathways.
         shared: hasGeneLists
           ? intersection(a, b).size
           : null,
 
+        // Calculate gene overlap using the complete gene Sets.
         overlap: hasGeneLists
           ? jaccard(a, b)
           : null,
 
+        // Record EC annotation coverage among the nonshared genes.
         coverage: hasGeneLists
           ? `${ecA.annotatedGenes}/${onlyA.size} | ${ecB.annotatedGenes}/${onlyB.size}`
           : "Not assessable",
 
+        // Calculate Jaccard similarity between the nonshared-gene EC profiles at all four levels.
         similarity: ecLevels.map((_, i) =>
           hasEcProfiles
             ? jaccard(ecA.byLevel[i], ecB.byLevel[i])
@@ -302,38 +325,35 @@ async function main() {
     }
   }
 
-  // Generate the results table and scatterplots.
+  // 5.4 DISPLAY ANALYSIS RESULTS
+
+  // Generate the results table and the four scatterplots.
   drawTable(pairs);
   drawCharts(pairs);
 
+  // Count pathway pairs with assessable gene overlap and EC similarity at every level.
   const plotted = pairs.filter(
     pair =>
       pair.overlap !== null &&
       pair.similarity.every(score => score !== null)
   ).length;
 
+  // Display a summary of the number of assessable pathway comparisons.
   status.textContent =
     `${plotted} of ${pairs.length} pairs have gene overlap ` +
     "and EC similarity at all four levels. " +
     "All pairs are listed in the table.";
-
 }
 
-// PEARSON CORRELATION AND LINEAR REGRESSION
+// 6. PEARSON CORRELATION AND LINEAR REGRESSION
 
-// Pearson's r measures linear association.
-//
-// The ordinary least-squares regression line is:
-//
-// y = intercept + slope * x
-//
-// For simple linear regression with an intercept:
-//
-// R² = r²
-
+// Calculate Pearson r, R² and linear regression coefficients for one EC level.
 function linearStatistics(points, levelIndex) {
+
+  // Determine the number of assessable pathway pairs.
   const n = points.length;
 
+  // Return undefined statistics if fewer than three observations are available.
   if (n < 3) {
     return {
       n,
@@ -344,20 +364,24 @@ function linearStatistics(points, levelIndex) {
     };
   }
 
+  // Calculate the mean gene overlap.
   const xMean = d3.mean(
     points,
     pair => pair.overlap
   );
 
+  // Calculate the mean EC similarity at the selected classification level.
   const yMean = d3.mean(
     points,
     pair => pair.similarity[levelIndex]
   );
 
+  // Initialize the sums of squared deviations and cross-products.
   let sxx = 0;
   let syy = 0;
   let sxy = 0;
 
+  // Calculate deviations from the means and accumulate the statistical sums.
   for (const pair of points) {
     const dx = pair.overlap - xMean;
 
@@ -369,10 +393,10 @@ function linearStatistics(points, levelIndex) {
     sxy += dx * dy;
   }
 
-  // Pearson correlation is undefined if all x or
-  // all y values are identical.
+  // Define a small numerical tolerance for detecting effectively zero variation.
   const epsilon = 1e-14;
 
+  // Return undefined statistics if either variable has effectively no variation.
   if (sxx <= epsilon || syy <= epsilon) {
     return {
       n,
@@ -383,13 +407,13 @@ function linearStatistics(points, levelIndex) {
     };
   }
 
-  // Calculate linear regression coefficients.
+  // Calculate the slope and intercept of the least-squares regression line.
   const slope = sxy / sxx;
 
   const intercept =
     yMean - slope * xMean;
 
-  // Calculate Pearson's correlation coefficient.
+  // Calculate Pearson's correlation coefficient and constrain it between -1 and 1.
   const r = Math.max(
     -1,
     Math.min(
@@ -398,9 +422,10 @@ function linearStatistics(points, levelIndex) {
     )
   );
 
-  // Coefficient of determination.
+  // Calculate the coefficient of determination by squaring Pearson's r.
   const rSquared = r * r;
 
+  // Return the calculated statistical results.
   return {
     n,
     r,
@@ -410,23 +435,23 @@ function linearStatistics(points, levelIndex) {
   };
 }
 
+// 7. PREPARE THE FOUR SCATTERPLOTS
 
-// CREATE THE FOUR SCATTERPLOTS
-
-// Use the same assessable pairs and axis scales
-// for all four EC classification levels.
-
+// Prepare the common dataset and layout for all four EC classification scatterplots.
 function drawCharts(pairs) {
+
+  // Retain only pathway pairs with assessable gene overlap and all four EC similarity scores.
   const points = pairs.filter(
     pair =>
       pair.overlap !== null &&
       pair.similarity.every(score => score !== null)
   );
 
+  // Select the chart container and remove any previously generated content.
   const chart = d3.select("#trial-chart");
-
   chart.selectAll("*").remove();
 
+  // Display an explanatory message and stop plotting if no assessable pairs exist.
   if (!points.length) {
     chart.append("p").text(
       "No pairs can be plotted yet. " +
@@ -436,6 +461,7 @@ function drawCharts(pairs) {
     return;
   }
 
+  // Create a responsive grid layout to contain the four scatterplots.
   const grid = chart.append("div")
     .style("display", "grid")
     .style(
@@ -444,23 +470,27 @@ function drawCharts(pairs) {
     )
     .style("gap", "16px");
 
+  // Generate one scatterplot for each EC classification level.
   ecLevels.forEach((level, i) => {
     drawChart(grid, points, level, i);
   });
 }
 
+// 8. DRAW EACH INDIVIDUAL SCATTERPLOT
 
-// DRAW EACH SCATTERPLOT WITH REGRESSION LINE
-
+// Create a scatterplot displaying gene overlap and EC similarity at one classification level.
 function drawChart(grid, points, level, i) {
 
+  // 8.1 CREATE THE CHART PANEL
+
+  // Create and style a separate panel for the current scatterplot.
   const panel = grid.append("section")
     .style("background-color", "white")
     .style("border", "1px solid #dce8e2")
     .style("border-radius", "12px")
     .style("padding", "14px");
 
-  // Panel heading.
+  // Display the EC classification level and its name as the panel heading.
   panel.append("h3")
     .style("margin", "0 0 8px")
     .style("color", "#163b3d")
@@ -468,12 +498,15 @@ function drawChart(grid, points, level, i) {
       `EC level ${level.depth} — ${level.name}`
     );
 
-  // Calculate Pearson r, R² and regression coefficients.
+  // 8.2 DISPLAY STATISTICAL RESULTS
+
+  // Calculate the statistical results for the current EC classification level.
   const stats = linearStatistics(points, i);
 
+  // Create a formatting function that displays numbers with three decimal places.
   const fmt = d3.format(".3f");
 
-  // Display correlation statistics above the chart.
+  // Display Pearson r, R² and the sample size above the scatterplot.
   panel.append("p")
     .style("font-size", "0.9rem")
     .style("margin", "0 0 8px")
@@ -483,20 +516,22 @@ function drawChart(grid, points, level, i) {
         : `Pearson r = ${fmt(stats.r)} · R² = ${fmt(stats.rSquared)} · n = ${stats.n}`
     );
 
-// X-axis: Gene overlap from 0% to 20%
-// Y-axis: EC similarity from 0% to 100%
+  // 8.3 DEFINE SCALES AND SVG CONTAINER
 
+  // Map gene overlap values from 0–20% to horizontal SVG coordinates.
   const x = d3.scaleLinear()
     .domain([0, 0.2])
     .range([65, 585]);
 
+  // Map EC similarity values from 0–100% to reversed vertical SVG coordinates.
   const y = d3.scaleLinear()
     .domain([0, 1])
     .range([305, 25]);
-  
-  // Convert decimal values into percentages for display.
+
+  // Create a formatting function that displays decimal values as percentages.
   const percent = d3.format(".0%");
 
+  // Create a responsive and accessibly labelled SVG container for the scatterplot.
   const svg = panel.append("svg")
     .attr("viewBox", "0 0 610 355")
     .style("width", "100%")
@@ -507,16 +542,18 @@ function drawChart(grid, points, level, i) {
       `Gene overlap and EC level ${level.depth} similarity with linear regression`
     );
 
-// X-axis: Display ticks at 0%, 5%, 10%, 15%, 20%.
+  // 8.4 CREATE AXES AND AXIS LABELS
+
+  // Draw the horizontal axis with percentage ticks from 0% to 20%.
   svg.append("g")
     .attr("transform", "translate(0,305)")
     .call(
       d3.axisBottom(x)
         .tickValues([0, 0.05, 0.10, 0.15, 0.20])
         .tickFormat(percent)
-  );
+    );
 
-  // Y-axis.
+  // Draw the vertical axis with percentage ticks from 0% to 100%.
   svg.append("g")
     .attr("transform", "translate(65,0)")
     .call(
@@ -525,7 +562,7 @@ function drawChart(grid, points, level, i) {
         .tickFormat(percent)
     );
 
-  // X-axis title.
+  // Add the horizontal axis label describing gene overlap.
   svg.append("text")
     .attr("x", 325)
     .attr("y", 345)
@@ -533,7 +570,7 @@ function drawChart(grid, points, level, i) {
     .attr("fill", "#273841")
     .text("Gene overlap (Jaccard index)");
 
-  // Y-axis title.
+  // Add the rotated vertical axis label describing EC similarity.
   svg.append("text")
     .attr(
       "transform",
@@ -543,9 +580,13 @@ function drawChart(grid, points, level, i) {
     .attr("fill", "#273841")
     .text("EC similarity (Jaccard index)");
 
-  // Clip regression lines to the plotting area.
+
+  // 8.5 DEFINE THE VISIBLE PLOTTING AREA
+
+  // Generate a unique identifier for the current chart's clipping region.
   const clipId = `trial-plot-clip-${i}`;
 
+  // Define a rectangular clipping region matching the plotting area.
   svg.append("defs")
     .append("clipPath")
     .attr("id", clipId)
@@ -555,17 +596,20 @@ function drawChart(grid, points, level, i) {
     .attr("width", 520)
     .attr("height", 280);
 
+  // Create an SVG group that restricts plotted elements to the clipping region.
   const plot = svg.append("g")
     .attr(
       "clip-path",
       `url(#${clipId})`
     );
 
-  // ORANGE DASHED LINE: LINEAR REGRESSION
- 
+
+  // 8.6 DRAW THE LINEAR REGRESSION LINE
+
+  // Draw the regression line only if valid regression statistics are available.
   if (stats.slope !== null) {
 
-    // Draw only within the observed x range.
+    // Determine the minimum and maximum observed gene overlap values.
     const xMin = d3.min(
       points,
       pair => pair.overlap
@@ -576,9 +620,11 @@ function drawChart(grid, points, level, i) {
       pair => pair.overlap
     );
 
+    // Define a function that predicts EC similarity using the regression equation.
     const fittedY = value =>
       stats.intercept + stats.slope * value;
 
+    // Draw an orange dashed regression line across the observed gene overlap range.
     plot.append("line")
       .attr("x1", x(xMin))
       .attr("y1", y(fittedY(xMin)))
@@ -589,8 +635,10 @@ function drawChart(grid, points, level, i) {
       .attr("stroke-dasharray", "9 6");
   }
 
-  // GREEN DOTS: PATHWAY PAIRS
 
+  // 8.7 DRAW THE PATHWAY PAIRS
+
+  // Bind pathway-pair data to green circles positioned by gene overlap and EC similarity.
   plot.selectAll("circle")
     .data(points)
     .join("circle")
@@ -605,6 +653,8 @@ function drawChart(grid, points, level, i) {
     .attr("r", 6)
     .attr("fill", "#167768")
     .attr("opacity", 0.8)
+
+    // Add a tooltip displaying the pathway pair and its similarity scores.
     .append("title")
     .text(
       pair =>
@@ -614,8 +664,9 @@ function drawChart(grid, points, level, i) {
         percent(pair.similarity[i])
     );
 
-  // CHART LEGEND
- 
+  // 8.8 CREATE THE CHART LEGEND
+
+  // Create and style the container for the chart legend.
   const legend = panel.append("div")
     .style("display", "flex")
     .style("flex-wrap", "wrap")
@@ -625,12 +676,13 @@ function drawChart(grid, points, level, i) {
     .style("color", "#526269")
     .style("margin-top", "8px");
 
-  // Green dot legend.
+  // Create a legend entry representing the pathway-pair markers.
   const dots = legend.append("span")
     .style("display", "inline-flex")
     .style("align-items", "center")
     .style("gap", "7px");
 
+  // Draw the green circular symbol used in the legend.
   dots.append("span")
     .style("display", "inline-block")
     .style("width", "10px")
@@ -638,17 +690,20 @@ function drawChart(grid, points, level, i) {
     .style("border-radius", "50%")
     .style("background-color", "#167768");
 
+  // Add the descriptive label for the green markers.
   dots.append("span")
     .text("Pathway pair (Jaccard indices)");
 
-  // Orange dashed regression line legend.
+  // Add a regression-line legend entry only if the regression line exists.
   if (stats.slope !== null) {
 
+    // Create a container for the regression-line legend entry.
     const line = legend.append("span")
       .style("display", "inline-flex")
       .style("align-items", "center")
       .style("gap", "7px");
 
+    // Draw an orange dashed symbol representing the regression line.
     line.append("span")
       .style("display", "inline-block")
       .style("width", "28px")
@@ -657,11 +712,12 @@ function drawChart(grid, points, level, i) {
         "3px dashed #c46b43"
       );
 
+    // Add the descriptive label for the regression line.
     line.append("span")
       .text("Linear regression (best fit)");
   }
 
-  // Explain the Jaccard similarity index.
+  // Display a short explanation of the interpretation of the Jaccard index.
   panel.append("p")
     .style("font-size", "0.8rem")
     .style("color", "#526269")
@@ -672,31 +728,34 @@ function drawChart(grid, points, level, i) {
     );
 }
 
-// 9. RESULTS TABLE
+// 9. GENERATE THE RESULTS TABLE
 
-// List all pathway pairs, including those that
-// cannot be plotted.
-
+// Create a table containing all pathway comparisons, including non-assessable pairs.
 function drawTable(pairs) {
 
+  // Create a formatting function that displays percentages with one decimal place.
   const percent = d3.format(".1%");
 
+  // Format valid similarity scores as percentages and missing scores as Not assessable.
   const score = value =>
     value === null
       ? "Not assessable"
       : percent(value);
 
+  // Select the table container and remove any previously generated content.
   const container = d3.select("#trial-table");
-
   container.selectAll("*").remove();
 
+  // Create a new HTML table inside the container.
   const table = container.append("table");
 
+  // Add a caption explaining the meaning of EC annotation coverage.
   table.append("caption").text(
     "EC coverage shows how many non-shared genes " +
     "on each side have a usable EC annotation."
   );
 
+  // Define the table column headings, including the four dynamically generated EC levels.
   const headings = [
     "Pair",
     "Genes A / B",
@@ -708,7 +767,7 @@ function drawTable(pairs) {
     )
   ];
 
-  // Table header.
+  // Bind the heading labels to HTML table header cells.
   table.append("thead")
     .append("tr")
     .selectAll("th")
@@ -717,7 +776,7 @@ function drawTable(pairs) {
     .attr("scope", "col")
     .text(heading => heading);
 
-  // Table body.
+  // Bind pathway comparisons to table rows and their individual results to table cells.
   table.append("tbody")
     .selectAll("tr")
     .data(pairs)
@@ -735,13 +794,15 @@ function drawTable(pairs) {
     .text(value => value);
 }
 
+// 10. EXECUTE THE ANALYSIS
 
-// RUN ANALYSIS
-
+// Execute the main function and handle any errors propagated during the analysis.
 main().catch(error => {
 
+  // Display the error message on the webpage.
   status.textContent =
     `Could not load the trial results. ${error.message}`;
 
+  // Log the error in the browser console for debugging.
   console.error(error);
 });
