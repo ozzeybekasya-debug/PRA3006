@@ -20,9 +20,8 @@ const ecLevels = [
   { depth: 4, name: "Full EC number" }
 ]; 
 
-// Selecting the HTML elements used to display the status and heading.
-const status = document.querySelector("#trial-status");
-const heading = document.querySelector("#trial-heading");
+// Selecting the HTML elements used to display the status.
+const statusTrial = document.querySelector("#trial-status");
 
 // 2. RETRIEVE DATA FROM WIKIDATA
 // Loading a SPARQL query file, execute it on Wikidata and return its results.
@@ -44,15 +43,15 @@ async function runQuery(filename) {
   }
 
   // Creating a URL object pointing to the Wikidata endpoint.
-  const url = new URL(endpoint);
+  const endpointUrl = new URL(endpoint);
 
   // Attaching the SPARQL query and request JSON formatted results.
-  url.searchParams.set("query", await queryFile.text());
-  url.searchParams.set("format", "json");
+  endpointUrl.searchParams.set("query", await queryFile.text());
+  endpointUrl.searchParams.set("format", "json");
 
   try {
     // Sending the query to Wikidata with a JSON response preference and a 100-second timeout.
-    const response = await fetch(url, {
+    const response = await fetch(endpointUrl, {
       headers: {
         Accept: "application/sparql-results+json"
       },
@@ -70,7 +69,9 @@ async function runQuery(filename) {
     // Returning the array containing the SPARQL result rows.
     return data.results.bindings;
 
-  } catch (error) {
+  }
+  
+  catch (error) {
 
     // Distinguishing timeout errors from other request errors.
     const reason = error.name === "TimeoutError"
@@ -160,7 +161,7 @@ function ecProfile(genes, ecByGene) {
 async function main() {
 
   // Display the current loading status.
-  status.textContent = "Loading D3…";
+  statusTrial.textContent = "Loading D3…";
 
   // Dynamically import D3.js and report any loading errors.
   try {
@@ -174,7 +175,7 @@ async function main() {
   }
 
   // Retrieve pathway-gene associations and report the number of returned rows.
-  status.textContent = "Loading pathway genes...";
+  statusTrial.textContent = "Loading pathway genes...";
   console.log("Starting pathway_genes.sparql");
 
   const geneRows = await runQuery("pathway_genes.sparql");
@@ -182,7 +183,7 @@ async function main() {
   console.log("Gene rows retrieved:", geneRows.length);
 
   // Retrieve gene-EC associations and report the number of returned rows.
-  status.textContent = "Loading EC numbers...";
+  statusTrial.textContent = "Loading EC numbers...";
   console.log("Starting enzyme_ec.sparql");
 
   const ecRows = await runQuery("enzyme_ec.sparql");
@@ -190,7 +191,7 @@ async function main() {
   console.log("EC rows retrieved:", ecRows.length);
 
   // Update the status once both queries have finished.
-  status.textContent = "Calculating pathway similarities...";
+  statusTrial.textContent = "Calculating pathway similarities...";
 
 
   // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
@@ -323,7 +324,7 @@ async function main() {
   ).length;
 
   // Display a summary of the number of assessable pathway comparisons.
-  status.textContent =
+  statusTrial.textContent =
     `${plotted} of ${pairs.length} pairs have gene overlap ` +
     "and EC similarity at all four levels. " +
     "All pairs are listed in the table.";
@@ -772,7 +773,7 @@ function drawTable(pairs) {
 main().catch(error => {
 
   // Display the error message on the webpage.
-  status.textContent =
+  statusTrial.textContent =
     `Could not load the trial results. ${error.message}`;
 
   // Log the error in the browser console for debugging.

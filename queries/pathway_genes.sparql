@@ -1,8 +1,5 @@
 #title: Genes linked to four human metabolic pathways
 # The query asks Wikidata the following question: For each of these four human pathways, which members are recorded as genes?
-# SELECT lists the columns to show, in this order:
-# Wikipathways ID, pathway name, gene item, and gene name.,
-# DISTINCT removes duplicate rows when all four selected values match.
 
 SELECT DISTINCT ?wpid ?pathwayLabel ?gene ?geneLabel
 # WHERE describes the patterns that Wikidata must match.
