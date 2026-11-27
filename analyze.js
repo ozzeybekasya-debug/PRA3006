@@ -1,30 +1,34 @@
-// 1. INITIAL SETUP
-// Declaring a variable to store the D3.js library once it is loaded.
+// Initial Setup
+
+// Declaring a variable for the D3.js library to be loaded to in the future.
 let d3;
 
-// Defining the address of the Wikidata SPARQL Query Service as an endpoint.
-const endpoint = "https://query.wikidata.org/sparql";
+// Defining a constant for the Wikidata endpoint.
+const endpoint = "https://query.wikidata.org/sparql"
 
-// Defining the 12 WikiPathways pathways selected for comparison.
-const pathwayIds = [
-  "WP534", "WP134", "WP500", "WP78",
-  "WP357", "WP143", "WP311", "WP197",
-  "WP1495", "WP465", "WP497", "WP100"
-];
-
-// Defining the four levels of EC classification and their labels.
+// Creating an array of four objects for the EC classification levels.
 const ecLevels = [
-  { depth: 1, name: "Class" },
-  { depth: 2, name: "Subclass" },
-  { depth: 3, name: "Sub-subclass" },
-  { depth: 4, name: "Full EC number" }
-]; 
+  {level: 1, name: "Main Enzyme Class"},
+  {level: 2, name: "Subclass"},
+  {level: 3, name: "Sub-Subclass"},
+  {level: 4, name: "Enzyme Identifier"}
+]
 
-// Selecting the HTML elements used to display the status.
+// Selecting the HTML status element which communicates what the program is currently doing.
 const statusTrial = document.querySelector("#trial-status");
 
-// 2. RETRIEVE DATA FROM WIKIDATA
-// Loading a SPARQL query file, execute it on Wikidata and return its results.
+// Updating the analysis status if the HTML element exists.
+function updateStatus(message) {
+  if (statusTrial) {
+    statusTrial.textContent = message;
+  }
+}
+
+// Retrieving Data from Wikidata
+
+// Turning the enpoint string to an URL.
+const endpointUrl = new URL(endpoint)
+
 async function runQuery(filename) {
   // Constructing the absolute URL of the SPARQL query file.
   const queryPath = new URL(
@@ -41,9 +45,6 @@ async function runQuery(filename) {
       `Could not load queries/${filename} (HTTP ${queryFile.status}).`
     );
   }
-
-  // Creating a URL object pointing to the Wikidata endpoint.
-  const endpointUrl = new URL(endpoint);
 
   // Attaching the SPARQL query and request JSON formatted results.
   endpointUrl.searchParams.set("query", await queryFile.text());
@@ -86,60 +87,60 @@ async function runQuery(filename) {
 
 // 3. SET OPERATIONS AND JACCARD SIMILARITY
 // Returning a Set containing the elements shared by both Sets.
-function intersection(a, b) {
-  return new Set(
-    [...a].filter(value => b.has(value))
-  );
+function intersection(a,b) {
+  const setA = new Set(a);
+  const setB = new Set(b);
+  const shared = [...setA].filter(value => setB.has(value));
+  return new Set(shared);
 }
 
-// Return a Set containing elements in a that are absent from b.
+// Returning a Set containing elements in a that are absent from b.
 function difference(a, b) {
-  return new Set(
-    [...a].filter(value => !b.has(value))
-  );
+  const uniquetoA = new Set(a).difference(new Set(b));
+  return uniquetoA;
 }
 
-// Calculate the Jaccard similarity between two Sets.
+// Calculating the Jaccard similarity between two Sets.
 function jaccard(a, b) {
+  const union = new Set(a).union(new Set(b)).size;
 
-  // Calculate the number of unique elements across both Sets.
-  const unionSize = new Set([...a, ...b]).size;
+  if (union === 0) {
+    return null;
+  }
 
-  // Divide the intersection size by the union size, or return null if the union is empty.
-  return unionSize > 0
-    ? intersection(a, b).size / unionSize
-    : null;
+  const similarity = intersection(a, b).size / union;
+  return similarity;
 }
 
 // 4. BUILD EC PROFILES
-// Construct EC profiles at all four classification levels for a given Set of genes.
+// Constructing EC profiles at all four classification levels for a given Set of genes.
 function ecProfile(genes, ecByGene) {
 
-  // Create four independent empty Sets to store unique EC classifications.
+  // Creating four independent empty Sets to store unique EC classifications.
   const byLevel = ecLevels.map(() => new Set());
 
-  // Initialize a counter for genes with usable EC annotations.
+  // Initializing a counter for genes with usable EC annotations.
   let annotatedGenes = 0;
 
-  // Iterate over every gene in the provided Set.
+  // Iterating over every gene in the provided Set.
   for (const gene of genes) {
 
-    // Retrieve the EC numbers associated with the current gene.
+    // Retrieving the EC numbers associated with the current gene.
     const codes = ecByGene.get(gene);
 
-    // Skip the gene if it has no usable EC annotations.
+    // Skipping the gene if it has no usable EC annotations.
     if (!codes?.size) continue;
 
-    // Count the gene as having usable EC annotations.
+    // Counting the gene as having usable EC annotations.
     annotatedGenes++;
 
-    // Process every EC number associated with the current gene.
+    // Processing every EC number associated with the current gene.
     for (const code of codes) {
 
-      // Split the EC number into its four numerical components as strings.
+      // Splitting the EC number into its four numerical components as strings.
       const parts = code.split(".");
 
-      // Construct and store the appropriate EC prefix at each classification level.
+      // Constructing and storing the appropriate EC prefix at each classification level.
       ecLevels.forEach(({ depth }, i) => {
         byLevel[i].add(
           parts.slice(0, depth).join(".")
@@ -148,50 +149,12 @@ function ecProfile(genes, ecByGene) {
     }
   }
 
-  // Return the four EC profiles and the number of annotated genes.
+  // Returning the four EC profiles and the number of annotated genes.
   return {
     byLevel,
     annotatedGenes
   };
 }
-
-// 5. MAIN ANALYSIS
-// Coordinate data retrieval, data processing, pathway comparisons and visualization.
-async function main() {
-
-  // Display the current loading status.
-  statusTrial.textContent = "Loading D3…";
-
-  // Dynamically import D3.js and report any loading errors.
-  try {
-    d3 = await import(
-      "https://cdn.jsdelivr.net/npm/d3@7/+esm"
-    );
-  } catch (error) {
-    throw new Error(
-      `Could not load D3 from jsDelivr. ${error.message}`
-    );
-  }
-
-  // Retrieve pathway-gene associations and report the number of returned rows.
-  statusTrial.textContent = "Loading pathway genes...";
-  console.log("Starting pathway_genes.sparql");
-
-  const geneRows = await runQuery("pathway_genes.sparql");
-
-  console.log("Gene rows retrieved:", geneRows.length);
-
-  // Retrieve gene-EC associations and report the number of returned rows.
-  statusTrial.textContent = "Loading EC numbers...";
-  console.log("Starting enzyme_ec.sparql");
-
-  const ecRows = await runQuery("enzyme_ec.sparql");
-
-  console.log("EC rows retrieved:", ecRows.length);
-
-  // Update the status once both queries have finished.
-  statusTrial.textContent = "Calculating pathway similarities...";
-
 
   // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
   // Initialize a Map associating each selected pathway with an empty Set of genes.
@@ -311,8 +274,10 @@ async function main() {
   }
 
   // 5.4 DISPLAY ANALYSIS RESULTS
-  // Generate the results table and the four scatterplots.
-  drawTable(pairs);
+  // Displaying all pathway comparisons in the web console.
+  console.table(pairs);
+
+  // Generating the four scatterplots.
   drawCharts(pairs);
 
   // Count pathway pairs with assessable gene overlap and EC similarity at every level.
@@ -325,8 +290,7 @@ async function main() {
   // Display a summary of the number of assessable pathway comparisons.
   statusTrial.textContent =
     `${plotted} of ${pairs.length} pairs have gene overlap ` +
-    "and EC similarity at all four levels. " +
-    "All pairs are listed in the table.";
+    "and EC similarity at all four levels.";
 }
 
 // 6. PEARSON CORRELATION AND LINEAR REGRESSION
@@ -436,8 +400,7 @@ function drawCharts(pairs) {
   // Display an explanatory message and stop plotting if no assessable pairs exist.
   if (!points.length) {
     chart.append("p").text(
-      "No pairs can be plotted yet. " +
-      "Check the gene counts and EC coverage in the table."
+      "No pathway pairs have sufficient data to be plotted."
     );
 
     return;
@@ -628,15 +591,14 @@ function drawChart(grid, points, level, i) {
     .attr("fill", "#167768")
     .attr("opacity", 0.8)
 
-    // Add a tooltip displaying the pathway pair and its similarity scores.
+    // Adding a tooltip displaying detailed pathway comparison results.
     .append("title")
-    .text(
-      pair =>
-        `${pair.label} | ` +
-        `Gene overlap: ${percent(pair.overlap)} | ` +
-        `EC level ${level.depth} similarity: ` +
-        percent(pair.similarity[i])
-    );
+    .text(pair => `${pair.label}
+Genes A / B: ${pair.geneCounts}
+Shared genes: ${pair.shared}
+Gene overlap: ${percent(pair.overlap)}
+EC level ${level.level} similarity: ${percent(pair.similarity[i])}
+EC coverage A | B: ${pair.coverage}`);
 
   // 8.8 CREATE THE CHART LEGEND
   // Create and style the container for the chart legend.
@@ -699,71 +661,6 @@ function drawChart(grid, points, level, i) {
       "Jaccard index: 0 = no shared entries; " +
       "1 = identical sets."
     );
-}
-
-// 9. GENERATE THE RESULTS TABLE
-// Create a table containing all pathway comparisons, including non-assessable pairs.
-function drawTable(pairs) {
-
-  // Create a formatting function that displays percentages with one decimal place.
-  const percent = d3.format(".1%");
-
-  // Format valid similarity scores as percentages and missing scores as Not assessable.
-  const score = value =>
-    value === null
-      ? "Not assessable"
-      : percent(value);
-
-  // Select the table container and remove any previously generated content.
-  const container = d3.select("#trial-table");
-  container.selectAll("*").remove();
-
-  // Create a new HTML table inside the container.
-  const table = container.append("table");
-
-  // Add a caption explaining the meaning of EC annotation coverage.
-  table.append("caption").text(
-    "EC coverage shows how many non-shared genes " +
-    "on each side have a usable EC annotation."
-  );
-
-  // Define the table column headings, including the four dynamically generated EC levels.
-  const headings = [
-    "Pair",
-    "Genes A / B",
-    "Shared genes",
-    "Gene overlap",
-    "EC coverage A | B",
-    ...ecLevels.map(
-      ({ depth }) => `EC level ${depth}`
-    )
-  ];
-
-  // Bind the heading labels to HTML table header cells.
-  table.append("thead")
-    .append("tr")
-    .selectAll("th")
-    .data(headings)
-    .join("th")
-    .attr("scope", "col")
-    .text(heading => heading);
-
-  // Bind pathway comparisons to table rows and their individual results to table cells.
-  table.append("tbody")
-    .selectAll("tr")
-    .data(pairs)
-    .join("tr")
-    .selectAll("td")
-    .data(pair => [
-      pair.label,
-      pair.geneCounts,
-      pair.shared ?? "Not assessable",
-      score(pair.overlap),
-      pair.coverage,
-      ...pair.similarity.map(score)
-    ])
-    .join("td")
-    .text(value => value);
 }
 
 // 10. EXECUTE THE ANALYSIS
