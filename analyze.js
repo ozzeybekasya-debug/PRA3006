@@ -83,7 +83,7 @@ async function runQuery(filename) {
   }
 }
 
-// 3. SET OPERATIONS AND JACCARD SIMILARITY
+// Jaccard Index
 // Returning a Set containing the elements shared by both Sets.
 function intersection(a,b) {
   const setA = new Set(a);
@@ -110,7 +110,7 @@ function jaccard(a, b) {
   return similarity;
 }
 
-// 4. BUILD EC PROFILES
+// EC Profiles at 4 Levels
 // Constructing EC profiles at all four classification levels for a given Set of genes.
 function ecProfile(genes, ecByGene) {
 
@@ -154,7 +154,7 @@ function ecProfile(genes, ecByGene) {
   };
 }
 
-// 5. MAIN ANALYSIS
+// Main Analysis
 // Coordinating data retrieval, processing and visualization.
 async function main() {
 
@@ -179,38 +179,38 @@ async function main() {
     geneRows.map(row => row.wpid?.value).filter(Boolean)
   )];
 
-  // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
-  // Initialize a Map associating each selected pathway with an empty Set of genes.
+  // Organizing Pathway-Gene Associations
+  // Initializing a Map associating each selected pathway with an empty Set of genes.
   const genesByPathway = new Map(
     pathwayIds.map(id => [id, new Set()])
   );
 
-  // Process each retrieved pathway-gene association.
+  // Processing each retrieved pathway-gene association.
   for (const row of geneRows) {
 
-    // Retrieve the gene Set associated with the pathway in the current row.
+    // Retrieving the gene Set associated with the pathway in the current row.
     const genes = genesByPathway.get(
       row.wpid?.value
     );
 
-    // Add the gene URI if the pathway and gene identifier are available.
+    // Adding the gene URI if the pathway and gene identifier are available.
     if (genes && row.gene?.value) {
       genes.add(row.gene.value);
     }
   }
 
-  // 5.2 ORGANIZE GENE-EC ASSOCIATIONS
-  // Initialize a Map associating gene URIs with Sets of EC numbers.
+  // Organizing Gene-EC Associations
+  // Initializing a Map associating gene URIs with Sets of EC numbers.
   const ecByGene = new Map();
 
-  // Process each retrieved gene-EC association.
+  // Processing each retrieved gene-EC association.
   for (const row of ecRows) {
 
-    // Extract the gene URI and remove surrounding whitespace from the EC number.
+    // Extracting the gene URI and remove surrounding whitespace from the EC number.
     const gene = row.gene?.value;
     const ec = row.ecNumber?.value?.trim();
 
-    // Skip rows with missing information or EC numbers that lack four numerical components.
+    // Skipping rows with missing information or EC numbers that lack four numerical components.
     if (
       !gene ||
       !ec ||
@@ -219,16 +219,16 @@ async function main() {
       continue;
     }
 
-    // Create an empty EC Set if the gene has not been encountered previously.
+    // Creating an empty EC Set if the gene has not been encountered previously.
     if (!ecByGene.has(gene)) {
       ecByGene.set(gene, new Set());
     }
 
-    // Add the valid EC number to the corresponding gene's Set.
+    // Adding the valid EC number to the corresponding gene's Set.
     ecByGene.get(gene).add(ec);
   }
 
-  // 5.3 COMPARE PATHWAY PAIRS
+  // Comparing Pathway Pairs
   // Initialize an array to store the results of all pathway comparisons.
   const pairs = [];
 
@@ -236,57 +236,57 @@ async function main() {
   for (let i = 0; i < pathwayIds.length; i++) {
     for (let j = i + 1; j < pathwayIds.length; j++) {
 
-      // Retrieve the identifiers of the two pathways being compared.
+      // Retrieving the identifiers of the two pathways being compared.
       const idA = pathwayIds[i];
       const idB = pathwayIds[j];
 
-      // Retrieve the Sets of genes associated with both pathways.
+      // Retrieving the Sets of genes associated with both pathways.
       const a = genesByPathway.get(idA);
       const b = genesByPathway.get(idB);
 
-      // Check whether both pathways have retrieved gene lists.
+      // Checking whether both pathways have retrieved gene lists.
       const hasGeneLists =
         a.size > 0 && b.size > 0;
 
-      // Identify the genes unique to each pathway by removing shared genes.
+      // Identifing the genes unique to each pathway by removing shared genes.
       const onlyA = difference(a, b);
       const onlyB = difference(b, a);
 
-      // Construct EC profiles using only the nonshared genes of each pathway.
+      // Constructing EC profiles using only the nonshared genes of each pathway.
       const ecA = ecProfile(onlyA, ecByGene);
       const ecB = ecProfile(onlyB, ecByGene);
 
-      // Check whether both pathways have sufficient data to calculate EC similarity.
+      // Checking whether both pathways have sufficient data to calculate EC similarity.
       const hasEcProfiles =
         hasGeneLists &&
         ecA.annotatedGenes > 0 &&
         ecB.annotatedGenes > 0;
 
-      // Store the results of the current pathway comparison.
+      // Storing the results of the current pathway comparison.
       pairs.push({
 
-        // Create a label identifying the pathway pair.
+        // Creating a label identifying the pathway pair.
         label: `${idA} vs ${idB}`,
 
-        // Record the number of retrieved genes in each pathway.
+        // Recording the number of retrieved genes in each pathway.
         geneCounts: `${a.size} / ${b.size}`,
 
-        // Calculate the number of genes shared by both pathways.
+        // Calculating the number of genes shared by both pathways.
         shared: hasGeneLists
           ? intersection(a, b).size
           : null,
 
-        // Calculate gene overlap using the complete gene Sets.
+        // Calculating gene overlap using the complete gene Sets.
         overlap: hasGeneLists
           ? jaccard(a, b)
           : null,
 
-        // Record EC annotation coverage among the nonshared genes.
+        // Recording EC annotation coverage among the nonshared genes.
         coverage: hasGeneLists
           ? `${ecA.annotatedGenes}/${onlyA.size} | ${ecB.annotatedGenes}/${onlyB.size}`
           : "Not assessable",
 
-        // Calculate Jaccard similarity between the nonshared-gene EC profiles at all four levels.
+        // Calculating Jaccard similarity between the nonshared-gene EC profiles at all four levels.
         similarity: ecLevels.map((_, i) =>
           hasEcProfiles
             ? jaccard(ecA.byLevel[i], ecB.byLevel[i])
@@ -296,35 +296,35 @@ async function main() {
     }
   }
 
-  // 5.4 DISPLAY ANALYSIS RESULTS
+  // Displaying Results
   // Displaying all pathway comparisons in the web console.
   console.table(pairs);
 
   // Generating the four scatterplots.
   drawCharts(pairs);
 
-  // Count pathway pairs with assessable gene overlap and EC similarity at every level.
+  // Counting pathway pairs with assessable gene overlap and EC similarity at every level.
   const plotted = pairs.filter(
     pair =>
       pair.overlap !== null &&
       pair.similarity.every(score => score !== null)
   ).length;
 
-  // Display a summary of the number of assessable pathway comparisons.
+  // Displaying a summary of the number of assessable pathway comparisons.
   updateStatus(
     `${plotted} pairs have gene overlap ` +
     "and EC similarity at all four levels."
   );
 }
 
-// 6. PEARSON CORRELATION AND LINEAR REGRESSION
-// Calculate Pearson r, R² and linear regression coefficients for one EC level.
+// Pearson Correlation
+// Calculating Pearson r, R² and linear regression coefficients for one EC level.
 function linearStatistics(points, levelIndex) {
 
-  // Determine the number of assessable pathway pairs.
+  // Determining the number of assessable pathway pairs.
   const n = points.length;
 
-  // Return undefined statistics if fewer than three observations are available.
+  // Returning undefined statistics if fewer than three observations are available.
   if (n < 3) {
     return {
       n,
@@ -335,24 +335,24 @@ function linearStatistics(points, levelIndex) {
     };
   }
 
-  // Calculate the mean gene overlap.
+  // Calculating the mean gene overlap.
   const xMean = d3.mean(
     points,
     pair => pair.overlap
   );
 
-  // Calculate the mean EC similarity at the selected classification level.
+  // Calculating the mean EC similarity at the selected classification level.
   const yMean = d3.mean(
     points,
     pair => pair.similarity[levelIndex]
   );
 
-  // Initialize the sums of squared deviations and cross-products.
+  // Initializing the sums of squared deviations and cross-products.
   let sxx = 0;
   let syy = 0;
   let sxy = 0;
 
-  // Calculate deviations from the means and accumulate the statistical sums.
+  // Calculating deviations from the means and accumulate the statistical sums.
   for (const pair of points) {
     const dx = pair.overlap - xMean;
 
@@ -364,10 +364,10 @@ function linearStatistics(points, levelIndex) {
     sxy += dx * dy;
   }
 
-  // Define a small numerical tolerance for detecting effectively zero variation.
+  // Defining a small numerical tolerance for detecting effectively zero variation.
   const epsilon = 1e-14;
 
-  // Return undefined statistics if either variable has effectively no variation.
+  // Returning undefined statistics if either variable has effectively no variation.
   if (sxx <= epsilon || syy <= epsilon) {
     return {
       n,
@@ -378,13 +378,13 @@ function linearStatistics(points, levelIndex) {
     };
   }
 
-  // Calculate the slope and intercept of the least-squares regression line.
+  // Calculating the slope and intercept of the least-squares regression line.
   const slope = sxy / sxx;
 
   const intercept =
     yMean - slope * xMean;
 
-  // Calculate Pearson's correlation coefficient and constrain it between -1 and 1.
+  // Calculating Pearson's correlation coefficient and constrain it between -1 and 1.
   const r = Math.max(
     -1,
     Math.min(
@@ -393,10 +393,10 @@ function linearStatistics(points, levelIndex) {
     )
   );
 
-  // Calculate the coefficient of determination by squaring Pearson's r.
+  // Calculating the coefficient of determination by squaring Pearson's r.
   const rSquared = r * r;
 
-  // Return the calculated statistical results.
+  // Returning the calculated statistical results.
   return {
     n,
     r,
@@ -406,22 +406,22 @@ function linearStatistics(points, levelIndex) {
   };
 }
 
-// 7. PREPARE THE FOUR SCATTERPLOTS
-// Prepare the common dataset and layout for all four EC classification scatterplots.
+// Preparing the Visualizations
+// Preparing the common dataset and layout for all four EC classification scatterplots.
 function drawCharts(pairs) {
 
-  // Retain only pathway pairs with assessable gene overlap and all four EC similarity scores.
+  // Retaining only pathway pairs with assessable gene overlap and all four EC similarity scores.
   const points = pairs.filter(
     pair =>
       pair.overlap !== null &&
       pair.similarity.every(score => score !== null)
   );
 
-  // Select the chart container and remove any previously generated content.
+  // Selecting the chart container and remove any previously generated content.
   const chart = d3.select("#trial-chart");
   chart.selectAll("*").remove();
 
-  // Display an explanatory message and stop plotting if no assessable pairs exist.
+  // Displaying an explanatory message and stop plotting if no assessable pairs exist.
   if (!points.length) {
     chart.append("p").text(
       "No pathway pairs have sufficient data to be plotted."
@@ -430,7 +430,7 @@ function drawCharts(pairs) {
     return;
   }
 
-  // Create a responsive grid layout to contain the four scatterplots.
+  // Creating a responsive grid layout to contain the four scatterplots.
   const grid = chart.append("div")
     .style("display", "grid")
     .style(
@@ -439,17 +439,16 @@ function drawCharts(pairs) {
     )
     .style("gap", "16px");
 
-  // Generate one scatterplot for each EC classification level.
+  // Generating one scatterplot for each EC classification level.
   ecLevels.forEach((level, i) => {
     drawChart(grid, points, level, i);
   });
 }
 
-// 8. DRAW EACH INDIVIDUAL SCATTERPLOT
+// Drawing Individual Scatterplots
 // Create a scatterplot displaying gene overlap and EC similarity at one classification level.
 function drawChart(grid, points, level, i) {
 
-  // 8.1 CREATE THE CHART PANEL
   // Create and style a separate panel for the current scatterplot.
   const panel = grid.append("section")
     .style("background-color", "white")
@@ -465,7 +464,6 @@ function drawChart(grid, points, level, i) {
       `EC level ${level.depth} — ${level.name}`
     );
 
-  // 8.2 DISPLAY STATISTICAL RESULTS
   // Calculate the statistical results for the current EC classification level.
   const stats = linearStatistics(points, i);
 
@@ -482,7 +480,7 @@ function drawChart(grid, points, level, i) {
         : `Pearson r = ${fmt(stats.r)} · R² = ${fmt(stats.rSquared)} · n = ${stats.n}`
     );
 
-  // 8.3 DEFINE SCALES AND SVG CONTAINER
+  // Defining Scales and SVG Container
   // Map gene overlap values from 0–20% to horizontal SVG coordinates.
   const x = d3.scaleLinear()
     .domain([0, 0.2])
@@ -507,7 +505,6 @@ function drawChart(grid, points, level, i) {
       `Gene overlap and EC level ${level.depth} similarity with linear regression`
     );
 
-  // 8.4 CREATE AXES AND AXIS LABELS
   // Draw the horizontal axis with percentage ticks from 0% to 20%.
   svg.append("g")
     .attr("transform", "translate(0,305)")
@@ -545,7 +542,6 @@ function drawChart(grid, points, level, i) {
     .text("EC similarity (Jaccard index)");
 
 
-  // 8.5 DEFINE THE VISIBLE PLOTTING AREA
   // Generate a unique identifier for the current chart's clipping region.
   const clipId = `trial-plot-clip-${i}`;
 
@@ -566,8 +562,6 @@ function drawChart(grid, points, level, i) {
       `url(#${clipId})`
     );
 
-
-  // 8.6 DRAW THE LINEAR REGRESSION LINE
   // Draw the regression line only if valid regression statistics are available.
   if (stats.slope !== null) {
 
@@ -596,9 +590,6 @@ function drawChart(grid, points, level, i) {
       .attr("stroke-width", 3)
       .attr("stroke-dasharray", "9 6");
   }
-
-
- // 8.7 DRAWING THE PATHWAY PAIRS
 
 // Creating and styling the interactive tooltip.
 const tooltip = panel.append("div")
@@ -654,8 +645,8 @@ EC coverage A | B: ${pair.coverage}`);
     tooltip.style("display", "none");
   });
 
-  // 8.8 CREATE THE CHART LEGEND
-  // Create and style the container for the chart legend.
+  // Chart Legend
+  // Creating and styling the container for the chart legend.
   const legend = panel.append("div")
     .style("display", "flex")
     .style("flex-wrap", "wrap")
@@ -665,13 +656,13 @@ EC coverage A | B: ${pair.coverage}`);
     .style("color", "#526269")
     .style("margin-top", "8px");
 
-  // Create a legend entry representing the pathway-pair markers.
+  // Creating a legend entry representing the pathway-pair markers.
   const dots = legend.append("span")
     .style("display", "inline-flex")
     .style("align-items", "center")
     .style("gap", "7px");
 
-  // Draw the green circular symbol used in the legend.
+  // Drawing the green circular symbol used in the legend.
   dots.append("span")
     .style("display", "inline-block")
     .style("width", "10px")
@@ -679,20 +670,20 @@ EC coverage A | B: ${pair.coverage}`);
     .style("border-radius", "50%")
     .style("background-color", "#167768");
 
-  // Add the descriptive label for the green markers.
+  // Adding the descriptive label for the green markers.
   dots.append("span")
     .text("Pathway pair (Jaccard indices)");
 
-  // Add a regression-line legend entry only if the regression line exists.
+  // Adding a regression-line legend entry only if the regression line exists.
   if (stats.slope !== null) {
 
-    // Create a container for the regression-line legend entry.
+    // Creating a container for the regression-line legend entry.
     const line = legend.append("span")
       .style("display", "inline-flex")
       .style("align-items", "center")
       .style("gap", "7px");
 
-    // Draw an orange dashed symbol representing the regression line.
+    // Drawing an orange dashed symbol representing the regression line.
     line.append("span")
       .style("display", "inline-block")
       .style("width", "28px")
@@ -701,12 +692,12 @@ EC coverage A | B: ${pair.coverage}`);
         "3px dashed #c46b43"
       );
 
-    // Add the descriptive label for the regression line.
+    // Adding the descriptive label for the regression line.
     line.append("span")
       .text("Linear regression (best fit)");
   }
 
-  // Display a short explanation of the interpretation of the Jaccard index.
+  // Displaying a short explanation of the interpretation of the Jaccard index.
   panel.append("p")
     .style("font-size", "0.8rem")
     .style("color", "#526269")
@@ -717,13 +708,13 @@ EC coverage A | B: ${pair.coverage}`);
     );
 }
 
-// 10. EXECUTE THE ANALYSIS
-// Execute the main function and handle any errors propagated during the analysis.
+// Executing the Analysis
+// Executing the main function and handle any errors propagated during the analysis.
 main().catch(error => {
 
-  // Display the error message on the webpage.
+  // Displaying the error message on the webpage.
   updateStatus(`Could not load the trial results. ${error.message}`);
 
-  // Log the error in the browser console for debugging.
+  // Logging the error in the browser console for debugging.
   console.error(error);
 });
