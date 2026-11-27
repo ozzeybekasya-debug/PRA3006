@@ -72,7 +72,6 @@ async function runQuery(filename) {
   }
   
   catch (error) {
-
     // Distinguishing timeout errors from other request errors.
     const reason = error.name === "TimeoutError"
       ? "No response within 100 seconds. Try reloading the page."
@@ -464,7 +463,6 @@ function drawCharts(pairs) {
 function drawChart(grid, points, level, i) {
 
   // 8.1 CREATE THE CHART PANEL
-
   // Create and style a separate panel for the current scatterplot.
   const panel = grid.append("section")
     .style("background-color", "white")
