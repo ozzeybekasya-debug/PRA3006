@@ -312,7 +312,7 @@ async function main() {
 
   // Display a summary of the number of assessable pathway comparisons.
   updateStatus(
-    `${plotted} of ${pairs.length} pairs have gene overlap ` +
+    `${plotted} pairs have gene overlap ` +
     "and EC similarity at all four levels."
   );
 }
