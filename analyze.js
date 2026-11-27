@@ -8,10 +8,10 @@ const endpoint = "https://query.wikidata.org/sparql"
 
 // Creating an array of four objects for the EC classification levels.
 const ecLevels = [
-  {level: 1, name: "Main Enzyme Class"},
-  {level: 2, name: "Subclass"},
-  {level: 3, name: "Sub-Subclass"},
-  {level: 4, name: "Enzyme Identifier"}
+  {depth: 1, name: "Main Enzyme Class"},
+  {depth: 2, name: "Subclass"},
+  {depth: 3, name: "Sub-Subclass"},
+  {depth: 4, name: "Enzyme Identifier"}
 ]
 
 // Selecting the HTML status element which communicates what the program is currently doing.
@@ -156,6 +156,31 @@ function ecProfile(genes, ecByGene) {
   };
 }
 
+// 5. MAIN ANALYSIS
+// Coordinating data retrieval, processing and visualization.
+async function main() {
+
+  // Loading the D3.js library.
+  updateStatus("Loading D3…");
+  d3 = await import("https://cdn.jsdelivr.net/npm/d3@7/+esm");
+
+  // Retrieving pathway-gene associations.
+  updateStatus("Loading pathway genes...");
+  const geneRows = await runQuery("pathway_genes.sparql");
+  console.log("Gene rows retrieved:", geneRows.length);
+
+  // Retrieving gene-EC associations.
+  updateStatus("Loading EC numbers...");
+  const ecRows = await runQuery("enzyme_ec.sparql");
+  console.log("EC rows retrieved:", ecRows.length);
+
+  updateStatus("Calculating pathway similarities...");
+
+  // Extracting unique pathway identifiers from the retrieved data.
+  const pathwayIds = [...new Set(
+    geneRows.map(row => row.wpid?.value).filter(Boolean)
+  )];
+
   // 5.1 ORGANIZE PATHWAY-GENE ASSOCIATIONS
   // Initialize a Map associating each selected pathway with an empty Set of genes.
   const genesByPathway = new Map(
@@ -209,7 +234,7 @@ function ecProfile(genes, ecByGene) {
   // Initialize an array to store the results of all pathway comparisons.
   const pairs = [];
 
-  // Generate all 66 unique pathway pairs without self-comparisons or reversed duplicates.
+  // Generating all unique pathway pairs without self-comparisons or reversed duplicates.
   for (let i = 0; i < pathwayIds.length; i++) {
     for (let j = i + 1; j < pathwayIds.length; j++) {
 
@@ -288,10 +313,11 @@ function ecProfile(genes, ecByGene) {
   ).length;
 
   // Display a summary of the number of assessable pathway comparisons.
-  statusTrial.textContent =
+  updateStatus(
     `${plotted} of ${pairs.length} pairs have gene overlap ` +
-    "and EC similarity at all four levels.";
-
+    "and EC similarity at all four levels."
+  );
+}
 
 // 6. PEARSON CORRELATION AND LINEAR REGRESSION
 // Calculate Pearson r, R² and linear regression coefficients for one EC level.
@@ -597,7 +623,7 @@ function drawChart(grid, points, level, i) {
 Genes A / B: ${pair.geneCounts}
 Shared genes: ${pair.shared}
 Gene overlap: ${percent(pair.overlap)}
-EC level ${level.level} similarity: ${percent(pair.similarity[i])}
+EC level ${level.depth} similarity: ${percent(pair.similarity[i])}
 EC coverage A | B: ${pair.coverage}`);
 
   // 8.8 CREATE THE CHART LEGEND
@@ -668,8 +694,7 @@ EC coverage A | B: ${pair.coverage}`);
 main().catch(error => {
 
   // Display the error message on the webpage.
-  statusTrial.textContent =
-    `Could not load the trial results. ${error.message}`;
+  updateStatus(`Could not load the trial results. ${error.message}`);
 
   // Log the error in the browser console for debugging.
   console.error(error);
