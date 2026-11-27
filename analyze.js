@@ -1,5 +1,4 @@
 // Initial Setup
-
 // Declaring a variable for the D3.js library to be loaded to in the future.
 let d3;
 
@@ -25,7 +24,6 @@ function updateStatus(message) {
 }
 
 // Retrieving Data from Wikidata
-
 // Turning the enpoint string to an URL.
 const endpointUrl = new URL(endpoint)
 
@@ -655,7 +653,7 @@ EC coverage A | B: ${pair.coverage}`);
     d3.select(this).attr("r", 6);
     tooltip.style("display", "none");
   });
-  
+
   // 8.8 CREATE THE CHART LEGEND
   // Create and style the container for the chart legend.
   const legend = panel.append("div")
