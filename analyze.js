@@ -600,32 +600,62 @@ function drawChart(grid, points, level, i) {
   }
 
 
-  // 8.7 DRAW THE PATHWAY PAIRS
-  // Bind pathway-pair data to green circles positioned by gene overlap and EC similarity.
-  plot.selectAll("circle")
-    .data(points)
-    .join("circle")
-    .attr(
-      "cx",
-      pair => x(pair.overlap)
-    )
-    .attr(
-      "cy",
-      pair => y(pair.similarity[i])
-    )
-    .attr("r", 6)
-    .attr("fill", "#167768")
-    .attr("opacity", 0.8)
+ // 8.7 DRAWING THE PATHWAY PAIRS
 
-    // Adding a tooltip displaying detailed pathway comparison results.
-    .append("title")
-    .text(pair => `${pair.label}
+// Creating and styling the interactive tooltip.
+const tooltip = panel.append("div")
+  .style("position", "fixed")
+  .style("background", "white")
+  .style("border", "1px solid #167768")
+  .style("border-radius", "8px")
+  .style("padding", "10px")
+  .style("font-size", "12px")
+  .style("white-space", "pre-line")
+  .style("pointer-events", "none")
+  .style("z-index", "1000")
+  .style("display", "none");
+
+// Binding pathway-pair data to circles.
+plot.selectAll("circle")
+  .data(points)
+  .join("circle")
+  .attr("cx", pair => x(pair.overlap))
+  .attr("cy", pair => y(pair.similarity[i]))
+  .attr("r", 6)
+  .attr("fill", "#167768")
+  .attr("opacity", 0.8)
+  .style("pointer-events", "all")
+  .style("cursor", "pointer")
+
+  // Displaying the tooltip when hovering over a circle.
+  .on("mouseover", function(event, pair) {
+    d3.select(this).attr("r", 9);
+
+    tooltip
+      .style("display", "block")
+      .style("left", `${event.clientX + 12}px`)
+      .style("top", `${event.clientY + 12}px`)
+      .text(`${pair.label}
 Genes A / B: ${pair.geneCounts}
 Shared genes: ${pair.shared}
 Gene overlap: ${percent(pair.overlap)}
-EC level ${level.depth} similarity: ${percent(pair.similarity[i])}
+EC similarity: ${percent(pair.similarity[i])}
 EC coverage A | B: ${pair.coverage}`);
+  })
 
+  // Moving the tooltip with the mouse.
+  .on("mousemove", event => {
+    tooltip
+      .style("left", `${event.clientX + 12}px`)
+      .style("top", `${event.clientY + 12}px`);
+  })
+
+  // Hiding the tooltip when the mouse leaves the circle.
+  .on("mouseout", function() {
+    d3.select(this).attr("r", 6);
+    tooltip.style("display", "none");
+  });
+  
   // 8.8 CREATE THE CHART LEGEND
   // Create and style the container for the chart legend.
   const legend = panel.append("div")
