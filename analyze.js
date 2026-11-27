@@ -24,8 +24,6 @@ function updateStatus(message) {
 }
 
 // Retrieving Data from Wikidata
-// Turning the enpoint string to an URL.
-const endpointUrl = new URL(endpoint)
 
 async function runQuery(filename) {
   // Constructing the absolute URL of the SPARQL query file.
@@ -37,6 +35,9 @@ async function runQuery(filename) {
   // Retrieving the SPARQL query file.
   const queryFile = await fetch(queryPath);
 
+  // Turning the enpoint string to an URL.
+  const endpointUrl = new URL(endpoint)
+  
   // Throwing an error if the query file cannot be loaded.
   if (!queryFile.ok) {
     throw new Error(
