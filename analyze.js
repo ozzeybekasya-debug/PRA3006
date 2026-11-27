@@ -291,7 +291,7 @@ function ecProfile(genes, ecByGene) {
   statusTrial.textContent =
     `${plotted} of ${pairs.length} pairs have gene overlap ` +
     "and EC similarity at all four levels.";
-}
+
 
 // 6. PEARSON CORRELATION AND LINEAR REGRESSION
 // Calculate Pearson r, R² and linear regression coefficients for one EC level.
